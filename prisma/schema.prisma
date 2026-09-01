@@ -1,0 +1,99 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  AGENT
+  CLIENT
+}
+
+enum PropertyStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  phone     String   @unique
+  name      String
+  role      Role     @default(CLIENT)
+  isBanned  Boolean  @default(false)
+  bannedAt  DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  properties Property[]
+  wallet     Wallet?
+  messages   Message[]
+}
+
+model Wallet {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adCredits    Int      @default(3)
+  boostCredits Int      @default(0)
+  updatedAt    DateTime @updatedAt
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  bundleName String
+  bundlePrice String
+  adCredits  Int
+  boostCredits Int
+  status    String   @default("PENDING") // PENDING, PROCESSED, REJECTED
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model Property {
+  id               String    @id @default(cuid())
+  title            String
+  description      String
+  rentPrice        Float
+  phase            String
+  propertyType     String
+  bedrooms         Int?
+  bathrooms        Int?
+  areaSqYards      Float
+  images           String[]
+  status           String    @default("APPROVED")
+  isBoosted        Boolean   @default(false)
+  
+  // Yeh do fields lazmi add karein:
+  isPremium        Boolean   @default(false)
+  premiumExpiresAt DateTime?
+
+  expiresAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SystemSetting {
+  id                    String   @id @default("global_config")
+  siteName              String   @default("GO RENTAL DHA")
+  supportPhone          String   @default("+92 300 0000000")
+  supportEmail          String   @default("support@gorentaldha.com")
+  defaultFreeCredits    Int      @default(3)
+  adExpiryDays          Int      @default(14)
+  premiumExpiryDays     Int      @default(7)
+  maintenanceMode       Boolean  @default(false)
+  allowRegistration     Boolean  @default(true)
+  autoApproveListings   Boolean  @default(true)
+  updatedAt             DateTime @updatedAt
+}
