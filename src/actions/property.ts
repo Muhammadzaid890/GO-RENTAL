@@ -148,10 +148,12 @@ export async function createRentalAd(formData: {
   rentPrice: number;
   phase: string;
   propertyType: string;
-  bedrooms: number;
-  bathrooms: number;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
   areaSqYards: number;
   images: string[];
+  contactNumber?: string;
+  whatsappNumber?: string;
   userEmail?: string;
   isPremium?: boolean;
 }) {
@@ -228,10 +230,12 @@ export async function createRentalAd(formData: {
           rentPrice: formData.rentPrice,
           phase: formData.phase,
           propertyType: formData.propertyType,
-          bedrooms: formData.bedrooms,
-          bathrooms: formData.bathrooms,
+          bedrooms: formData.bedrooms ?? null,
+          bathrooms: formData.bathrooms ?? null,
           areaSqYards: formData.areaSqYards,
           images: formData.images.slice(0, 5),
+          contactNumber: formData.contactNumber || user.phone || "",
+          whatsappNumber: formData.whatsappNumber || null,
           userId: user.id,
           status: "APPROVED",
           isPremium: requestedPremium,
@@ -262,7 +266,7 @@ export async function createRentalAd(formData: {
   }
 }
 
-// 4. DELETE AGENT PROPERTY (EXPORT RESTORED)
+// 4. DELETE AGENT PROPERTY
 export async function deleteAgentProperty(propertyId: string) {
   try {
     const session = await getSessionUser();
@@ -302,5 +306,27 @@ export async function deleteAgentProperty(propertyId: string) {
   } catch (error) {
     console.error("Failed to delete property:", error);
     return { success: false, error: "FAILED TO DELETE PROPERTY." };
+  }
+}
+
+// 5. BOOST RENTAL AD (Accepts string or number days)
+export async function boostRentalAd(propertyId: string, days: number | string = 7) {
+  try {
+    const numDays = typeof days === "string" ? parseInt(days, 10) || 7 : days;
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + numDays);
+
+    const updated = await prisma.property.update({
+      where: { id: propertyId },
+      data: {
+        isBoosted: true,
+        boostExpiresAt: expiresAt,
+      },
+    });
+
+    return { success: true, property: updated };
+  } catch (error: any) {
+    console.error("Boost Rental Ad Error:", error);
+    return { success: false, error: error.message || "Failed to boost ad" };
   }
 }

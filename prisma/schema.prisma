@@ -59,31 +59,30 @@ model Message {
 }
 
 model Property {
-  id               String    @id @default(cuid())
-  title            String
-  description      String
-  rentPrice        Float
-  phase            String
-  propertyType     String
-  bedrooms         Int?
-  bathrooms        Int?
-  areaSqYards      Float
-  images           String[]
-  status           String    @default("APPROVED")
-  isBoosted        Boolean   @default(false)
-  
-  // Yeh do fields lazmi add karein:
-  isPremium        Boolean   @default(false)
-  premiumExpiresAt DateTime?
-
-  expiresAt        DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  userId           String
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String    @id @default(uuid())
+  title             String
+  description       String
+  rentPrice         Float
+  phase             String
+  propertyType      String
+  bedrooms          Int?
+  bathrooms         Int?
+  areaSqYards       Float
+  images            String[]
+  contactNumber     String?   @default("")
+  whatsappNumber    String?
+  status            String    @default("ACTIVE")
+  isFeatured        Boolean   @default(false)
+  isPremium         Boolean   @default(false)
+  isBoosted         Boolean   @default(false)
+  expiresAt         DateTime?
+  premiumExpiresAt  DateTime?
+  boostExpiresAt    DateTime?
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
-
 model SystemSetting {
   id                    String   @id @default("global_config")
   siteName              String   @default("GO RENTAL DHA")
