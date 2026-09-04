@@ -235,6 +235,7 @@ export default function MyAdsPage() {
                         type="button"
                         disabled={boostingId === item.id}
                         onClick={() => handleBoostClick(item.id)}
+                        style={{ backgroundColor: "#1c1917", color: "#ffffff" }}
                         className="flex items-center gap-1 text-xs font-black uppercase px-3 py-1.5 rounded-lg bg-dark hover:bg-stone-800 text-white transition-all cursor-pointer disabled:opacity-50"
                       >
                         {boostingId === item.id ? (
