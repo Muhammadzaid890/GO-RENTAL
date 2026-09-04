@@ -112,11 +112,6 @@ export default function Footer() {
                   POST RENTAL AD
                 </Link>
               </li>
-              <li>
-                <Link href="/admin" className="hover:text-[#657A68] transition-colors">
-                  ADMIN DASHBOARD
-                </Link>
-              </li>
             </ul>
           </div>
 
