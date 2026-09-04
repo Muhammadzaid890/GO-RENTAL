@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { deleteAgentProperty } from "@/actions/property";
+import { deleteAgentProperty, boostRentalAd } from "@/actions/property";
 import {
   MapPin,
   Clock,
@@ -12,7 +12,9 @@ import {
   AlertTriangle,
   PlusCircle,
   ExternalLink,
+  Zap,
   X,
+  Loader2,
 } from "lucide-react";
 
 interface Property {
@@ -23,7 +25,9 @@ interface Property {
   propertyType: string;
   images: string[];
   status: string;
+  isPremium?: boolean;
   isBoosted: boolean;
+  boostExpiresAt?: string | null;
   expiresAt: string | null;
   createdAt: string;
 }
@@ -31,6 +35,7 @@ interface Property {
 export default function MyAdsPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+  const [boostingId, setBoostingId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalDaysLeft, setModalDaysLeft] = useState(0);
 
@@ -51,6 +56,22 @@ export default function MyAdsPage() {
   useEffect(() => {
     fetchAds();
   }, []);
+
+  const handleBoostClick = async (propertyId: string) => {
+    try {
+      setBoostingId(propertyId);
+      const res = await boostRentalAd(propertyId, 7);
+      if (res.success) {
+        await fetchAds();
+      } else {
+        alert(res.error || "FAILED TO BOOST AD. CHECK WALLET CREDITS.");
+      }
+    } catch (err: any) {
+      alert(err?.message || "SOMETHING WENT WRONG");
+    } finally {
+      setBoostingId(null);
+    }
+  };
 
   const handleDeleteClick = async (item: Property) => {
     const now = new Date();
@@ -89,7 +110,7 @@ export default function MyAdsPage() {
         <div>
           <h1 className="text-2xl font-black uppercase text-dark">MY POSTED ADS</h1>
           <p className="text-xs text-stone-500 uppercase mt-0.5">
-            MANAGE YOUR ACTIVE RENTAL PROPERTIES AND DURATION LOCKS
+            MANAGE YOUR ACTIVE RENTAL PROPERTIES, BOOSTS AND DURATION LOCKS
           </p>
         </div>
         <Link
@@ -124,6 +145,12 @@ export default function MyAdsPage() {
               ? Math.max(0, Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
               : 0;
 
+            const isBoostActive = Boolean(
+              item.isBoosted &&
+              item.boostExpiresAt &&
+              new Date(item.boostExpiresAt) > now
+            );
+
             return (
               <div
                 key={item.id}
@@ -131,18 +158,25 @@ export default function MyAdsPage() {
               >
                 <div className="space-y-3">
                   {/* Status Badges */}
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                        item.status === "APPROVED"
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                          : "bg-amber-50 text-amber-700 border border-amber-200"
-                      }`}
-                    >
-                      {item.status}
-                    </span>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                          item.status === "APPROVED"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-amber-50 text-amber-700 border border-amber-200"
+                        }`}
+                      >
+                        {item.status}
+                      </span>
+                      {item.isPremium && (
+                        <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 text-[10px] font-black uppercase">
+                          PREMIUM
+                        </span>
+                      )}
+                    </div>
 
-                    {item.isBoosted && (
+                    {isBoostActive && (
                       <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-sage text-white text-[10px] font-black uppercase">
                         <Sparkles className="w-3 h-3" />
                         BOOSTED
@@ -180,28 +214,52 @@ export default function MyAdsPage() {
                   </div>
                 </div>
 
-                {/* Card Actions */}
-                <div className="flex items-center justify-between pt-3 border-t border-stone-100">
+                {/* Card Actions: View Ad + Boost Ad + Delete */}
+                <div className="flex items-center justify-between pt-3 border-t border-stone-100 gap-2">
                   <Link
                     href={`/property/${item.id}`}
                     className="text-stone-500 hover:text-dark text-xs font-bold uppercase flex items-center gap-1"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    <span>VIEW AD</span>
+                    <span>VIEW</span>
                   </Link>
 
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteClick(item)}
-                    className={`flex items-center gap-1 text-xs font-black uppercase px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
-                      isLocked
-                        ? "bg-stone-50 border-stone-200 text-stone-400 hover:text-stone-600"
-                        : "bg-red-50 border-red-200 text-red-600 hover:bg-red-600 hover:text-white"
-                    }`}
-                  >
-                    {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Trash2 className="w-3.5 h-3.5" />}
-                    <span>{isLocked ? "LOCKED" : "DELETE"}</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {/* BOOST BUTTON */}
+                    {isBoostActive ? (
+                      <span className="text-[11px] font-bold text-sage uppercase px-3 py-1.5 bg-sage/10 rounded-lg border border-sage/20">
+                        BOOST ACTIVE
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={boostingId === item.id}
+                        onClick={() => handleBoostClick(item.id)}
+                        className="flex items-center gap-1 text-xs font-black uppercase px-3 py-1.5 rounded-lg bg-dark hover:bg-stone-800 text-white transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {boostingId === item.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-sage" />
+                        ) : (
+                          <Zap className="w-3.5 h-3.5 text-sage" />
+                        )}
+                        <span>BOOST AD</span>
+                      </button>
+                    )}
+
+                    {/* DELETE BUTTON */}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteClick(item)}
+                      className={`flex items-center gap-1 text-xs font-black uppercase px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                        isLocked
+                          ? "bg-stone-50 border-stone-200 text-stone-400 hover:text-stone-600"
+                          : "bg-red-50 border-red-200 text-red-600 hover:bg-red-600 hover:text-white"
+                      }`}
+                    >
+                      {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      <span>{isLocked ? "LOCKED" : "DELETE"}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );
