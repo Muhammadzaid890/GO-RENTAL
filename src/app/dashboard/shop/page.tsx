@@ -75,17 +75,18 @@ export default function AgentShopPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8 px-2 sm:px-4 lg:px-0">
       <div>
-        <h1 className="text-2xl font-black uppercase text-dark">
+        <h1 className="text-xl sm:text-2xl font-black uppercase text-dark tracking-tight">
           CREDIT SHOP & PACKAGES
         </h1>
-        <p className="text-xs text-stone-500 uppercase mt-0.5">
+        <p className="text-[11px] sm:text-xs text-stone-500 uppercase mt-1">
           REQUEST RENTAL ADS & BOOST CREDITS DIRECTLY TO ADMIN INBOX OR VIA WHATSAPP
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Responsive Grid: 1 col on mobile, 2 on tablet, 3 on desktop */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
         {bundles.map((pkg) => {
           const whatsappText = encodeURIComponent(
             `Assalam o Alaikum Admin, I want to purchase the "${pkg.name}" (${pkg.price}) for GO RENTAL DHA.`
@@ -95,7 +96,7 @@ export default function AgentShopPage() {
           return (
             <div
               key={pkg.id}
-              className="bg-white rounded-3xl border border-stone-200 p-6 flex flex-col justify-between shadow-xs hover:shadow-xl transition-all relative overflow-hidden"
+              className="bg-white rounded-3xl border border-stone-200 p-5 sm:p-6 flex flex-col justify-between shadow-xs hover:shadow-xl transition-all relative overflow-hidden"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -106,10 +107,10 @@ export default function AgentShopPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-base font-black uppercase text-dark">
+                  <h3 className="text-sm sm:text-base font-black uppercase text-dark">
                     {pkg.name}
                   </h3>
-                  <div className="text-2xl font-black text-dark mt-2 tracking-tight">
+                  <div className="text-xl sm:text-2xl font-black text-dark mt-1.5 tracking-tight">
                     {pkg.price}
                   </div>
                 </div>
@@ -135,22 +136,22 @@ export default function AgentShopPage() {
                 </div>
 
                 {/* Feature List */}
-                <ul className="space-y-2 pt-2 text-xs text-stone-600 font-medium">
+                <ul className="space-y-2 pt-1 text-xs text-stone-600 font-medium">
                   {pkg.features.map((feat, idx) => (
                     <li key={idx} className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-sage shrink-0" />
-                      <span>{feat}</span>
+                      <span className="line-clamp-1">{feat}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-6 mt-6 border-t border-stone-100 space-y-2.5">
+              <div className="pt-5 mt-5 border-t border-stone-100 space-y-2.5">
                 {/* 1. Request to Inbox Button */}
                 {sentId === pkg.id ? (
                   <div className="w-full py-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2">
-                    <CheckCircle className="w-4 h-4" />
+                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>REQUEST SENT TO ADMIN!</span>
                   </div>
                 ) : (
@@ -158,14 +159,14 @@ export default function AgentShopPage() {
                     type="button"
                     disabled={loadingId === pkg.id}
                     onClick={() => handleOrder(pkg)}
-                    className="w-full py-3 bg-dark hover:bg-stone-800 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50"
+                    className="w-full py-3 bg-dark hover:bg-stone-800 !text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50"
                   >
                     {loadingId === pkg.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin text-white shrink-0" />
                     ) : (
-                      <Send className="w-4 h-4" />
+                      <Send className="w-4 h-4 text-white shrink-0" />
                     )}
-                    <span>REQUEST TO ADMIN INBOX</span>
+                    <span className="!text-white font-black">REQUEST TO ADMIN INBOX</span>
                   </button>
                 )}
 
@@ -174,10 +175,10 @@ export default function AgentShopPage() {
                   href={whatsappUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 !text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
                 >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>CHAT WITH ADMIN (WHATSAPP)</span>
+                  <MessageCircle className="w-4 h-4 text-white shrink-0" />
+                  <span className="!text-white font-black">CHAT WITH ADMIN (WHATSAPP)</span>
                 </a>
               </div>
             </div>
