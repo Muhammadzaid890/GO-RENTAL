@@ -3,6 +3,24 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getSessionUser } from "@/actions/auth";
+import fs from "fs/promises";
+import path from "path";
+
+// Local file storage path for settings without needing DB schema push
+const SETTINGS_FILE_PATH = path.join(process.cwd(), "platform-settings.json");
+
+const defaultSettings = {
+  id: "global_config",
+  siteName: "GO RENTAL DHA",
+  supportPhone: "+92 316 2802558",
+  supportEmail: "support@gorentaldha.com",
+  defaultFreeCredits: 3,
+  adExpiryDays: 14,
+  premiumExpiryDays: 7,
+  maintenanceMode: false,
+  allowRegistration: true,
+  autoApproveListings: true,
+};
 
 // 1. GET ALL LISTINGS FOR ADMIN
 export async function getAllAdminListings() {
@@ -240,7 +258,7 @@ export async function toggleUserRole(userId: string) {
       return { success: false, error: "CANNOT CHANGE ROLE OF AN ADMIN." };
     }
 
-    // Toggle: AGENT banayein ya USER (Client)
+    // Toggle: AGENT to USER (Client) or USER to AGENT
     const newRole = targetUser.role === "AGENT" ? "USER" : "AGENT";
 
     const updatedUser = await prisma.user.update({
@@ -520,50 +538,18 @@ export async function deleteMessage(messageId: string) {
   }
 }
 
-// 16. GET GLOBAL SYSTEM SETTINGS (SAFE FALLBACK)
+// 16. GET GLOBAL SYSTEM SETTINGS (READ FROM LOCAL FILE WITHOUT DB PUSH)
 export async function getSystemSettings() {
-  const defaultSettings = {
-    id: "global_config",
-    siteName: "GO RENTAL DHA",
-    supportPhone: "+92 300 0000000",
-    supportEmail: "support@gorentaldha.com",
-    defaultFreeCredits: 3,
-    adExpiryDays: 14,
-    premiumExpiryDays: 7,
-    maintenanceMode: false,
-    allowRegistration: true,
-    autoApproveListings: true,
-  };
-
   try {
-    const session = await getSessionUser();
-    if (session?.role !== "ADMIN") {
-      return { success: false, error: "UNAUTHORIZED", data: null };
-    }
-
-    const client = prisma as any;
-    if (!client.systemSetting) {
-      return { success: true, data: defaultSettings };
-    }
-
-    let settings = await client.systemSetting.findUnique({
-      where: { id: "global_config" },
-    });
-
-    if (!settings) {
-      settings = await client.systemSetting.create({
-        data: defaultSettings,
-      });
-    }
-
-    return { success: true, data: settings };
-  } catch (error) {
-    console.error("Settings fetch notice (using defaults):", error);
+    const fileContent = await fs.readFile(SETTINGS_FILE_PATH, "utf-8");
+    const parsed = JSON.parse(fileContent);
+    return { success: true, data: { ...defaultSettings, ...parsed } };
+  } catch {
     return { success: true, data: defaultSettings };
   }
 }
 
-// 17. UPDATE GLOBAL SYSTEM SETTINGS (SAFE UPSERT)
+// 17. UPDATE GLOBAL SYSTEM SETTINGS (SAVE TO LOCAL FILE WITHOUT DB PUSH)
 export async function updateSystemSettings(formData: {
   siteName: string;
   supportPhone: string;
@@ -581,29 +567,33 @@ export async function updateSystemSettings(formData: {
       return { success: false, error: "UNAUTHORIZED: ADMIN ONLY ACTION." };
     }
 
-    const client = prisma as any;
-    if (!client.systemSetting) {
-      return {
-        success: true,
-        data: formData,
-        message: "SETTINGS SAVED IN RUNTIME.",
-      };
-    }
+    const payload = {
+      ...defaultSettings,
+      ...formData,
+      siteName: formData.siteName.trim().toUpperCase(),
+      supportPhone: formData.supportPhone.trim(),
+      supportEmail: formData.supportEmail.trim().toLowerCase(),
+      defaultFreeCredits: Number(formData.defaultFreeCredits) || 3,
+      adExpiryDays: Number(formData.adExpiryDays) || 14,
+      premiumExpiryDays: Number(formData.premiumExpiryDays) || 7,
+      maintenanceMode: Boolean(formData.maintenanceMode),
+      allowRegistration: Boolean(formData.allowRegistration),
+      autoApproveListings: Boolean(formData.autoApproveListings),
+    };
 
-    const updated = await client.systemSetting.upsert({
-      where: { id: "global_config" },
-      update: { ...formData },
-      create: {
-        id: "global_config",
-        ...formData,
-      },
-    });
+    await fs.writeFile(SETTINGS_FILE_PATH, JSON.stringify(payload, null, 2), "utf-8");
 
     revalidatePath("/admin/settings");
+    revalidatePath("/admin");
     revalidatePath("/");
-    return { success: true, data: updated, message: "SETTINGS UPDATED SUCCESSFULLY!" };
-  } catch (error) {
-    console.error("Failed to update settings:", error);
-    return { success: false, error: "FAILED TO SAVE SETTINGS." };
+
+    return {
+      success: true,
+      data: payload,
+      message: "SYSTEM SETTINGS SAVED LOCALLY SUCCESSFULLY!",
+    };
+  } catch (error: any) {
+    console.error("Failed to save settings to file:", error);
+    return { success: false, error: error?.message || "FAILED TO SAVE SETTINGS." };
   }
 }

@@ -8,7 +8,7 @@ import Providers from "@/components/Providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "GO RENTAL DHA | Karachi Rental Real Estate",
+  title: "GO RENTAL",
   description: "DHA Karachi's premier rental properties, apartments, houses, and penthouses.",
 };
 

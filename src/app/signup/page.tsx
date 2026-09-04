@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { signupClient } from "@/actions/auth";
 import Link from "next/link";
-import { UserCheck, Shield, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { registerUser } from "@/actions/auth";
+import { User, Mail, Phone, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -15,102 +15,183 @@ export default function SignupPage() {
     name: "",
     email: "",
     phone: "",
+    role: "AGENT",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
+    setError("");
 
-    const res = await signupClient(formData);
-
-    if (res.success) {
-      router.push("/dashboard/wallet");
-    } else {
-      setError(res.error || "FAILED TO SIGN UP.");
+    try {
+      const res = await registerUser(formData);
+      if (res.success) {
+        router.push("/dashboard/my-ads");
+      } else {
+        setError(res.error || "FAILED TO REGISTER ACCOUNT");
+      }
+    } catch (err: any) {
+      setError(err?.message || "SOMETHING WENT WRONG");
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto py-12">
-      <div className="bg-white p-8 rounded-2xl border border-stone-200 shadow-sm space-y-6">
-        <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-sage/10 text-sage mx-auto flex items-center justify-center">
-            <UserCheck className="w-6 h-6" />
+    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-xl space-y-6">
+        
+        {/* LOGO CONTAINER - Transparent with No Background */}
+        <div className="flex flex-col items-center justify-center text-center space-y-3">
+          <Link href="/" className="inline-block transition-transform hover:scale-105">
+            <img
+              src="/signup-logo.png"
+              alt="GO RENTAL DHA"
+              className="h-16 w-auto object-contain bg-transparent border-0 outline-none shadow-none"
+            />
+          </Link>
+          <div>
+            <h1 className="text-xl font-black uppercase text-[#171717] tracking-tight">
+              CREATE AGENT ACCOUNT
+            </h1>
+            <p className="text-xs text-stone-500 uppercase tracking-wide mt-1">
+              JOIN GO RENTAL DHA TO POST AND MANAGE PROPERTIES
+            </p>
           </div>
-          <h1 className="text-2xl font-black uppercase text-dark">
-            CLIENT SIGNUP
-          </h1>
-          <p className="text-xs text-stone-500 uppercase">
-            SIGN UP AND GET 3 FREE RENTAL AD CREDITS
-          </p>
         </div>
 
+        {/* Error Alert */}
         {error && (
-          <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold uppercase text-center">
-            {error}
+          <div className="p-3.5 bg-red-50 border border-red-200 text-red-600 text-xs font-black uppercase rounded-xl flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
+        {/* Registration Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold uppercase text-dark mb-1.5">
-              FULL NAME
+          {/* Full Name */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-black uppercase text-stone-700 tracking-wider">
+              FULL NAME / AGENCY NAME
             </label>
-            <input
-              type="text"
-              required
-              placeholder="E.G. ALI AHMED"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-stone-200 text-xs font-bold uppercase focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                required
+                placeholder="ENTER FULL NAME"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full pl-10 pr-4 py-2.5 bg-[#FBFBF9] border border-stone-200 rounded-xl text-xs font-bold uppercase outline-none focus:border-[#657A68]"
+              />
+              <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-3 pointer-events-none" />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold uppercase text-dark mb-1.5">
+          {/* Email Address */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-black uppercase text-stone-700 tracking-wider">
               EMAIL ADDRESS
             </label>
-            <input
-              type="email"
-              required
-              placeholder="ali@example.com"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-stone-200 text-xs font-bold lowercase focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20"
-            />
+            <div className="relative">
+              <input
+                type="email"
+                required
+                placeholder="AGENT@EXAMPLE.COM"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="w-full pl-10 pr-4 py-2.5 bg-[#FBFBF9] border border-stone-200 rounded-xl text-xs font-bold outline-none focus:border-[#657A68]"
+              />
+              <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-3 pointer-events-none" />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold uppercase text-dark mb-1.5">
-              WHATSAPP / PHONE NUMBER
+          {/* Phone / WhatsApp */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-black uppercase text-stone-700 tracking-wider">
+              CONTACT NUMBER / WHATSAPP
             </label>
-            <input
-              type="tel"
-              required
-              placeholder="+92 300 1234567"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-stone-200 text-xs font-bold focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20"
-            />
+            <div className="relative">
+              <input
+                type="tel"
+                required
+                placeholder="0300 1234567"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full pl-10 pr-4 py-2.5 bg-[#FBFBF9] border border-stone-200 rounded-xl text-xs font-bold uppercase outline-none focus:border-[#657A68]"
+              />
+              <Phone className="w-4 h-4 text-stone-400 absolute left-3.5 top-3 pointer-events-none" />
+            </div>
           </div>
 
+          {/* Role Selection */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-black uppercase text-stone-700 tracking-wider">
+              ACCOUNT TYPE
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, role: "AGENT" })}
+                style={{
+                  backgroundColor: formData.role === "AGENT" ? "#171717" : "#FBFBF9",
+                  color: formData.role === "AGENT" ? "#ffffff" : "#171717",
+                }}
+                className={`py-2.5 rounded-xl text-xs font-black uppercase border transition-all cursor-pointer ${
+                  formData.role === "AGENT"
+                    ? "border-[#D4AF37]/50 shadow-sm"
+                    : "border-stone-200 text-stone-500"
+                }`}
+              >
+                REAL ESTATE AGENT
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, role: "USER" })}
+                style={{
+                  backgroundColor: formData.role === "USER" ? "#171717" : "#FBFBF9",
+                  color: formData.role === "USER" ? "#ffffff" : "#171717",
+                }}
+                className={`py-2.5 rounded-xl text-xs font-black uppercase border transition-all cursor-pointer ${
+                  formData.role === "USER"
+                    ? "border-[#D4AF37]/50 shadow-sm"
+                    : "border-stone-200 text-stone-500"
+                }`}
+              >
+                DIRECT CLIENT
+              </button>
+            </div>
+          </div>
+
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 bg-sage hover:bg-sage-dark text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all disabled:opacity-50 mt-2"
+            style={{ backgroundColor: "#171717", color: "#ffffff" }}
+            className="w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 border border-[#D4AF37]/40 hover:border-[#D4AF37] hover:bg-stone-900 transition-all cursor-pointer disabled:opacity-50 shadow-md mt-2"
           >
-            {loading ? "CREATING ACCOUNT..." : "SIGN UP AS CLIENT"}
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-[#D4AF37]" />
+            ) : (
+              <ArrowRight className="w-4 h-4 text-[#D4AF37]" />
+            )}
+            <span className="text-white font-black tracking-wider">CREATE ACCOUNT</span>
           </button>
         </form>
 
-        <div className="pt-4 border-t border-stone-100 text-center text-xs text-stone-500">
-          ALREADY HAVE AN ACCOUNT?{" "}
-          <Link href="/login" className="font-bold text-sage hover:underline uppercase">
-            LOG IN HERE
-          </Link>
+        {/* Footer Login Link */}
+        <div className="text-center pt-2 border-t border-stone-100">
+          <p className="text-xs font-bold uppercase text-stone-500">
+            ALREADY HAVE AN ACCOUNT?{" "}
+            <Link
+              href="/login"
+              className="text-[#657A68] hover:text-[#171717] underline underline-offset-4 transition-colors font-black"
+            >
+              LOGIN HERE
+            </Link>
+          </p>
         </div>
+
       </div>
     </div>
   );

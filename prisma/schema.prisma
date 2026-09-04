@@ -84,15 +84,15 @@ model Property {
   updatedAt         DateTime  @updatedAt
 }
 model SystemSetting {
-  id                    String   @id @default("global_config")
-  siteName              String   @default("GO RENTAL DHA")
-  supportPhone          String   @default("+92 300 0000000")
-  supportEmail          String   @default("support@gorentaldha.com")
-  defaultFreeCredits    Int      @default(3)
-  adExpiryDays          Int      @default(14)
-  premiumExpiryDays     Int      @default(7)
-  maintenanceMode       Boolean  @default(false)
-  allowRegistration     Boolean  @default(true)
-  autoApproveListings   Boolean  @default(true)
-  updatedAt             DateTime @updatedAt
+  id                  String   @id @default("global_config")
+  siteName            String   @default("GO RENTAL DHA")
+  supportPhone        String   @default("+92 300 0000000")
+  supportEmail        String   @default("support@gorentaldha.com")
+  defaultFreeCredits  Int      @default(3)
+  adExpiryDays        Int      @default(14)
+  premiumExpiryDays   Int      @default(7)
+  maintenanceMode     Boolean  @default(false)
+  allowRegistration   Boolean  @default(true)
+  autoApproveListings Boolean  @default(true)
+  updatedAt           DateTime @updatedAt
 }
