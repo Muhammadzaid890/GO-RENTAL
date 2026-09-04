@@ -309,24 +309,82 @@ export async function deleteAgentProperty(propertyId: string) {
   }
 }
 
-// 5. BOOST RENTAL AD (Accepts string or number days)
+// 5. BOOST RENTAL AD (Checks and cuts 1 boost credit from user wallet)
 export async function boostRentalAd(propertyId: string, days: number | string = 7) {
   try {
+    const session = await getSessionUser();
+    if (!session) {
+      return { success: false, error: "PLEASE LOGIN FIRST TO BOOST AN AD." };
+    }
+
     const numDays = typeof days === "string" ? parseInt(days, 10) || 7 : days;
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + numDays);
 
-    const updated = await prisma.property.update({
+    const property = await prisma.property.findUnique({
       where: { id: propertyId },
-      data: {
-        isBoosted: true,
-        boostExpiresAt: expiresAt,
-      },
     });
+
+    if (!property) {
+      return { success: false, error: "PROPERTY NOT FOUND." };
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { id: session.id || "" },
+          { email: session.email?.toLowerCase() || "" },
+        ],
+      },
+      include: { wallet: true },
+    });
+
+    if (!user) {
+      return { success: false, error: "USER NOT FOUND." };
+    }
+
+    const isAdmin = user.role === "ADMIN";
+
+    // Non-admin credit check
+    if (!isAdmin && (!user.wallet || user.wallet.boostCredits < 1)) {
+      return {
+        success: false,
+        error: "INSUFFICIENT BOOST CREDITS. PLEASE RECHARGE FROM THE CREDIT SHOP.",
+      };
+    }
+
+    // Transaction to update property and decrement 1 boost credit
+    const updated = await prisma.$transaction(async (tx) => {
+      const prop = await tx.property.update({
+        where: { id: propertyId },
+        data: {
+          isBoosted: true,
+          boostExpiresAt: expiresAt,
+        },
+      });
+
+      if (!isAdmin && user.wallet) {
+        await tx.wallet.update({
+          where: { userId: user.id },
+          data: {
+            boostCredits: {
+              decrement: 1,
+            },
+          },
+        });
+      }
+
+      return prop;
+    });
+
+    revalidatePath("/dashboard/my-ads");
+    revalidatePath("/dashboard/wallet");
+    revalidatePath("/properties");
+    revalidatePath("/");
 
     return { success: true, property: updated };
   } catch (error: any) {
     console.error("Boost Rental Ad Error:", error);
-    return { success: false, error: error.message || "Failed to boost ad" };
+    return { success: false, error: error.message || "FAILED TO BOOST AD." };
   }
 }

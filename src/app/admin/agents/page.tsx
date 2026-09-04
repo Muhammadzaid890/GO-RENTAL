@@ -6,6 +6,7 @@ import {
   updateAgentCredits,
   toggleBanUser,
   deleteUserAccount,
+  toggleUserRole,
 } from "@/actions/admin";
 import {
   Users,
@@ -22,6 +23,9 @@ import {
   X,
   AlertCircle,
   Filter,
+  RefreshCw,
+  ShieldCheck,
+  UserCheck,
 } from "lucide-react";
 
 export default function AdminAgentsPage() {
@@ -53,7 +57,30 @@ export default function AdminAgentsPage() {
     loadData();
   }, []);
 
-  // 1. Toggle Ban Handler
+  // 1. Toggle Role Handler (Agent <-> Client/User)
+  const handleToggleRole = async (userId: string, currentRole: string, userName: string) => {
+    const targetRoleName = currentRole === "AGENT" ? "CLIENT (USER)" : "AGENT";
+    if (!confirm(`ARE YOU SURE YOU WANT TO CHANGE ${userName}'S ROLE TO ${targetRoleName}?`)) {
+      return;
+    }
+
+    setActionLoadingId(userId);
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    const res = await toggleUserRole(userId);
+    if (res.success) {
+      setSuccessMsg(res.message || `ROLE UPDATED TO ${res.newRole}!`);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, role: res.newRole } : u))
+      );
+    } else {
+      setErrorMsg(res.error || "FAILED TO UPDATE USER ROLE.");
+    }
+    setActionLoadingId(null);
+  };
+
+  // 2. Toggle Ban Handler
   const handleToggleBan = async (userId: string, currentStatus: boolean, userName: string) => {
     const confirmPrompt = currentStatus
       ? `ARE YOU SURE YOU WANT TO UNBAN ${userName}?`
@@ -77,7 +104,7 @@ export default function AdminAgentsPage() {
     setActionLoadingId(null);
   };
 
-  // 2. Delete User Handler
+  // 3. Delete User Handler
   const handleDeleteUser = async (userId: string, userName: string) => {
     if (!confirm(`WARNING: THIS WILL PERMANENTLY DELETE ${userName} AND ALL THEIR PROPERTIES. PROCEED?`)) {
       return;
@@ -97,7 +124,7 @@ export default function AdminAgentsPage() {
     setActionLoadingId(null);
   };
 
-  // 3. Recharge Credits (Ad or Boost)
+  // 4. Recharge Credits (Ad or Boost)
   const handleRechargeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUserForCredit || creditsToAdd < 1) return;
@@ -143,26 +170,28 @@ export default function AdminAgentsPage() {
       u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (u.phone && u.phone.includes(searchQuery));
 
-    const matchesRole = roleFilter === "ALL" || u.role === roleFilter;
+    const matchesRole =
+      roleFilter === "ALL" ||
+      (roleFilter === "CLIENT" ? (u.role === "USER" || u.role === "CLIENT") : u.role === roleFilter);
 
     return matchesSearch && matchesRole;
   });
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-12 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-black uppercase text-[#1A1F1C] tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black uppercase text-[#171717] tracking-tight">
               AGENTS & REGISTERED USERS
             </h1>
             <span className="px-2.5 py-0.5 bg-stone-200 text-stone-700 text-xs font-black rounded-lg">
               {users.length} TOTAL
             </span>
           </div>
-          <p className="text-xs font-bold uppercase text-stone-400">
-            CONTROL ACCOUNTS, ASSIGN AD & BOOST CREDITS, & MANAGE DIRECTORY ACCESS
+          <p className="text-xs font-bold uppercase text-stone-400 mt-0.5">
+            CONTROL ACCOUNTS, SWITCH ROLES (AGENT / CLIENT), ASSIGN CREDITS, & MANAGE DIRECTORY
           </p>
         </div>
       </div>
@@ -218,7 +247,7 @@ export default function AdminAgentsPage() {
       ) : filteredUsers.length === 0 ? (
         <div className="p-16 text-center bg-white rounded-3xl border border-stone-200 space-y-2">
           <Users className="w-10 h-10 text-stone-300 mx-auto" />
-          <div className="text-sm font-black uppercase text-[#1A1F1C]">
+          <div className="text-sm font-black uppercase text-[#171717]">
             NO USERS FOUND
           </div>
         </div>
@@ -227,14 +256,15 @@ export default function AdminAgentsPage() {
           {filteredUsers.map((user) => {
             const isSelf = user.role === "ADMIN";
             const isItemLoading = actionLoadingId === user.id;
+            const isAgent = user.role === "AGENT";
 
             return (
               <div
                 key={user.id}
-                className={`bg-white rounded-2xl border p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xs transition-all ${
+                className={`bg-white rounded-2xl border p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-2xs transition-all ${
                   user.isBanned
                     ? "border-red-300 bg-red-50/20"
-                    : "border-stone-200/90"
+                    : "border-stone-200/90 hover:border-[#D4AF37]/50"
                 }`}
               >
                 {/* User Info */}
@@ -242,10 +272,10 @@ export default function AdminAgentsPage() {
                   <div
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm uppercase shrink-0 ${
                       user.role === "ADMIN"
-                        ? "bg-[#1A1F1C] text-white"
-                        : user.role === "AGENT"
-                        ? "bg-[#657A68]/20 text-[#657A68]"
-                        : "bg-stone-100 text-stone-700"
+                        ? "bg-[#171717] text-[#D4AF37] border border-[#D4AF37]/40"
+                        : isAgent
+                        ? "bg-[#657A68]/15 text-[#657A68] border border-[#657A68]/30"
+                        : "bg-stone-100 text-stone-700 border border-stone-200"
                     }`}
                   >
                     {user.name.charAt(0)}
@@ -253,20 +283,20 @@ export default function AdminAgentsPage() {
 
                   <div className="space-y-1 min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-sm sm:text-base font-black uppercase text-[#1A1F1C] truncate">
+                      <h3 className="text-sm sm:text-base font-black uppercase text-[#171717] truncate">
                         {user.name}
                       </h3>
 
                       <span
-                        className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${
+                        className={`text-[9px] font-black uppercase px-2.5 py-0.5 rounded-md border ${
                           user.role === "ADMIN"
-                            ? "bg-stone-900 text-white"
-                            : user.role === "AGENT"
-                            ? "bg-[#657A68] text-white"
-                            : "bg-stone-200 text-stone-700"
+                            ? "bg-[#171717] text-[#D4AF37] border-[#D4AF37]/40"
+                            : isAgent
+                            ? "bg-[#657A68]/10 text-[#657A68] border-[#657A68]/30"
+                            : "bg-stone-100 text-stone-700 border-stone-200"
                         }`}
                       >
-                        {user.role}
+                        {user.role === "USER" ? "CLIENT" : user.role}
                       </span>
 
                       {user.isBanned && (
@@ -296,7 +326,7 @@ export default function AdminAgentsPage() {
                 </div>
 
                 {/* Credits & Action Buttons */}
-                <div className="flex items-center gap-2.5 self-end md:self-center shrink-0 flex-wrap">
+                <div className="flex items-center gap-2.5 self-end lg:self-center shrink-0 flex-wrap">
                   {/* Ad & Boost Credits Counters */}
                   <div className="flex items-center bg-[#FBFBF9] border border-stone-200 rounded-xl p-1 gap-1.5 shadow-2xs">
                     {/* Ad Credits */}
@@ -321,10 +351,11 @@ export default function AdminAgentsPage() {
                       <button
                         type="button"
                         onClick={() => setSelectedUserForCredit(user)}
-                        className="px-2.5 py-1.5 bg-[#1A1F1C] hover:bg-stone-800 text-white rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer flex items-center gap-1"
+                        style={{ backgroundColor: "#171717", color: "#ffffff" }}
+                        className="px-2.5 py-1.5 hover:bg-stone-800 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer flex items-center gap-1 border border-[#D4AF37]/30"
                         title="Recharge Credits"
                       >
-                        <Plus className="w-3 h-3 text-emerald-400" />
+                        <Plus className="w-3 h-3 text-[#D4AF37]" />
                         <span>ADD</span>
                       </button>
                     )}
@@ -333,6 +364,22 @@ export default function AdminAgentsPage() {
                   {/* Actions for Non-Admin accounts */}
                   {!isSelf && (
                     <>
+                      {/* TOGGLE ROLE BUTTON (AGENT <-> CLIENT) */}
+                      <button
+                        type="button"
+                        disabled={isItemLoading}
+                        onClick={() => handleToggleRole(user.id, user.role, user.name)}
+                        className={`px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border transition-all cursor-pointer disabled:opacity-50 ${
+                          isAgent
+                            ? "bg-stone-100 hover:bg-stone-200 text-stone-800 border-stone-300"
+                            : "bg-[#657A68]/10 hover:bg-[#657A68]/20 text-[#657A68] border-[#657A68]/30"
+                        }`}
+                        title={isAgent ? "Switch to Client" : "Promote to Agent"}
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isItemLoading ? "animate-spin" : ""}`} />
+                        <span>{isAgent ? "MAKE CLIENT" : "MAKE AGENT"}</span>
+                      </button>
+
                       {/* Ban / Unban Button */}
                       <button
                         type="button"
@@ -391,7 +438,7 @@ export default function AdminAgentsPage() {
                   )}
                 </div>
                 <div>
-                  <h3 className="text-sm font-black uppercase text-[#1A1F1C]">
+                  <h3 className="text-sm font-black uppercase text-[#171717]">
                     GRANT {creditType} CREDITS
                   </h3>
                   <p className="text-[10px] font-bold uppercase text-stone-400">
@@ -402,7 +449,7 @@ export default function AdminAgentsPage() {
               <button
                 type="button"
                 onClick={() => setSelectedUserForCredit(null)}
-                className="p-1 rounded-full text-stone-400 hover:bg-stone-100"
+                className="p-1.5 rounded-full text-stone-400 hover:bg-stone-100"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -415,7 +462,7 @@ export default function AdminAgentsPage() {
                 onClick={() => setCreditType("AD")}
                 className={`py-2 rounded-lg text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   creditType === "AD"
-                    ? "bg-[#1A1F1C] text-white shadow-xs"
+                    ? "bg-[#171717] text-white shadow-xs"
                     : "text-stone-500 hover:text-stone-900"
                 }`}
               >
@@ -449,7 +496,7 @@ export default function AdminAgentsPage() {
                       onClick={() => setCreditsToAdd(preset)}
                       className={`py-2 rounded-xl text-xs font-black uppercase border transition-all cursor-pointer ${
                         creditsToAdd === preset
-                          ? "bg-[#1A1F1C] text-white border-[#1A1F1C]"
+                          ? "bg-[#171717] text-white border-[#171717]"
                           : "bg-[#FBFBF9] border-stone-200 text-stone-700 hover:bg-stone-100"
                       }`}
                     >
@@ -477,8 +524,8 @@ export default function AdminAgentsPage() {
                 </button>
                 <button
                   type="submit"
-                  style={{ backgroundColor: "#1A1F1C", color: "#ffffff" }}
-                  className="py-3 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-stone-800 cursor-pointer shadow-md"
+                  style={{ backgroundColor: "#171717", color: "#ffffff" }}
+                  className="py-3 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-stone-800 cursor-pointer shadow-md border border-[#D4AF37]/30"
                 >
                   CONFIRM ADD
                 </button>

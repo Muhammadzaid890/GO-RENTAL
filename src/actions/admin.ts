@@ -220,7 +220,50 @@ export async function updateAgentCredits(
   }
 }
 
-// 7. TOGGLE BAN / UNBAN USER ACCOUNT
+// 7. TOGGLE USER ROLE (AGENT <-> CLIENT/USER)
+export async function toggleUserRole(userId: string) {
+  try {
+    const session = await getSessionUser();
+    if (session?.role !== "ADMIN") {
+      return { success: false, error: "UNAUTHORIZED: ADMIN ONLY ACTION." };
+    }
+
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!targetUser) {
+      return { success: false, error: "USER NOT FOUND." };
+    }
+
+    if (targetUser.role === "ADMIN") {
+      return { success: false, error: "CANNOT CHANGE ROLE OF AN ADMIN." };
+    }
+
+    // Toggle: AGENT banayein ya USER (Client)
+    const newRole = targetUser.role === "AGENT" ? "USER" : "AGENT";
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        role: newRole as any,
+      },
+    });
+
+    revalidatePath("/admin/agents");
+    revalidatePath("/admin");
+    return {
+      success: true,
+      newRole: updatedUser.role,
+      message: `USER ROLE UPDATED TO ${newRole}!`,
+    };
+  } catch (error: any) {
+    console.error("Failed to toggle role:", error);
+    return { success: false, error: error?.message || "FAILED TO TOGGLE ROLE." };
+  }
+}
+
+// 8. TOGGLE BAN / UNBAN USER ACCOUNT
 export async function toggleBanUser(userId: string) {
   try {
     const session = await getSessionUser();
@@ -257,7 +300,7 @@ export async function toggleBanUser(userId: string) {
   }
 }
 
-// 8. DELETE USER ACCOUNT PERMANENTLY
+// 9. DELETE USER ACCOUNT PERMANENTLY
 export async function deleteUserAccount(userId: string) {
   try {
     const session = await getSessionUser();
@@ -292,7 +335,7 @@ export async function deleteUserAccount(userId: string) {
   }
 }
 
-// 9. GET ADMIN WALLET BALANCE
+// 10. GET ADMIN WALLET BALANCE
 export async function getAdminWalletData() {
   try {
     const session = await getSessionUser();
@@ -322,7 +365,7 @@ export async function getAdminWalletData() {
   }
 }
 
-// 10. RECHARGE ADMIN SELF CREDITS
+// 11. RECHARGE ADMIN SELF CREDITS
 export async function rechargeAdminSelfCredits(
   amount: number,
   type: "AD" | "BOOST"
@@ -363,7 +406,7 @@ export async function rechargeAdminSelfCredits(
   }
 }
 
-// 11. GET ALL PURCHASE MESSAGES / REQUESTS FOR ADMIN
+// 12. GET ALL PURCHASE MESSAGES / REQUESTS FOR ADMIN
 export async function getAllMessages() {
   try {
     const session = await getSessionUser();
@@ -393,7 +436,7 @@ export async function getAllMessages() {
   }
 }
 
-// 12. APPROVE PURCHASE REQUEST & AUTO-CREDIT USER WALLET
+// 13. APPROVE PURCHASE REQUEST & AUTO-CREDIT USER WALLET
 export async function approvePurchaseMessage(messageId: string) {
   try {
     const session = await getSessionUser();
@@ -436,7 +479,7 @@ export async function approvePurchaseMessage(messageId: string) {
   }
 }
 
-// 13. REJECT PURCHASE REQUEST
+// 14. REJECT PURCHASE REQUEST
 export async function rejectPurchaseMessage(messageId: string) {
   try {
     const session = await getSessionUser();
@@ -457,7 +500,7 @@ export async function rejectPurchaseMessage(messageId: string) {
   }
 }
 
-// 14. DELETE MESSAGE
+// 15. DELETE MESSAGE
 export async function deleteMessage(messageId: string) {
   try {
     const session = await getSessionUser();
@@ -477,7 +520,7 @@ export async function deleteMessage(messageId: string) {
   }
 }
 
-// 15. GET GLOBAL SYSTEM SETTINGS (SAFE FALLBACK)
+// 16. GET GLOBAL SYSTEM SETTINGS (SAFE FALLBACK)
 export async function getSystemSettings() {
   const defaultSettings = {
     id: "global_config",
@@ -520,7 +563,7 @@ export async function getSystemSettings() {
   }
 }
 
-// 16. UPDATE GLOBAL SYSTEM SETTINGS (SAFE UPSERT)
+// 17. UPDATE GLOBAL SYSTEM SETTINGS (SAFE UPSERT)
 export async function updateSystemSettings(formData: {
   siteName: string;
   supportPhone: string;

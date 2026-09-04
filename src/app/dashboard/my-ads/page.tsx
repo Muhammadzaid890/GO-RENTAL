@@ -97,46 +97,52 @@ export default function MyAdsPage() {
 
   if (loading) {
     return (
-      <div className="p-12 text-center text-xs font-bold uppercase text-stone-400">
-        LOADING YOUR LISTINGS...
+      <div className="p-16 text-center text-xs font-black uppercase text-stone-400 tracking-widest flex items-center justify-center gap-2">
+        <Loader2 className="w-4 h-4 animate-spin text-[#D4AF37]" />
+        <span>LOADING YOUR LISTINGS...</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black uppercase text-dark">MY POSTED ADS</h1>
-          <p className="text-xs text-stone-500 uppercase mt-0.5">
+          <h1 className="text-2xl font-black uppercase tracking-tight text-[#171717]">
+            MY POSTED ADS
+          </h1>
+          <p className="text-xs text-stone-500 uppercase tracking-wide mt-0.5">
             MANAGE YOUR ACTIVE RENTAL PROPERTIES, BOOSTS AND DURATION LOCKS
           </p>
         </div>
         <Link
           href="/post-ad"
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-sage hover:bg-sage-dark text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-all"
+          style={{ backgroundColor: "#171717", color: "#ffffff" }}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider border border-[#D4AF37]/30 hover:border-[#D4AF37] hover:bg-stone-900 transition-all shadow-md group self-start sm:self-auto"
         >
-          <PlusCircle className="w-4 h-4" />
-          <span>POST NEW AD</span>
+          <PlusCircle className="w-4 h-4 text-[#D4AF37] group-hover:scale-110 transition-transform" />
+          <span className="text-white font-black">POST NEW AD</span>
         </Link>
       </div>
 
       {/* Ads List */}
       {properties.length === 0 ? (
-        <div className="bg-white p-12 text-center rounded-2xl border border-stone-200 space-y-4">
-          <p className="text-stone-400 font-bold uppercase text-xs">
+        <div className="bg-white p-14 text-center rounded-3xl border border-stone-200 shadow-xs space-y-4">
+          <p className="text-stone-400 font-bold uppercase text-xs tracking-wider">
             YOU HAVE NOT POSTED ANY ADS YET.
           </p>
           <Link
             href="/post-ad"
-            className="inline-block px-5 py-2.5 bg-dark text-white rounded-xl text-xs font-black uppercase"
+            style={{ backgroundColor: "#171717", color: "#ffffff" }}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider border border-[#D4AF37]/40 hover:border-[#D4AF37] hover:bg-stone-900 transition-all shadow-md"
           >
-            POST YOUR FIRST LISTING
+            <PlusCircle className="w-4 h-4 text-[#D4AF37]" />
+            <span>POST YOUR FIRST LISTING</span>
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {properties.map((item) => {
             const now = new Date();
             const expiry = item.expiresAt ? new Date(item.expiresAt) : null;
@@ -154,31 +160,35 @@ export default function MyAdsPage() {
             return (
               <div
                 key={item.id}
-                className="bg-white rounded-2xl border border-stone-200 p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-stone-300 transition-all"
+                className="bg-white rounded-3xl border border-stone-200/90 p-5 sm:p-6 shadow-xs flex flex-col justify-between space-y-4 hover:border-[#D4AF37]/50 hover:shadow-xl transition-all relative overflow-hidden group"
               >
-                <div className="space-y-3">
+                <div className="space-y-3.5">
                   {/* Status Badges */}
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                        className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border ${
                           item.status === "APPROVED"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : "bg-amber-50 text-amber-700 border border-amber-200"
+                            ? "bg-[#657A68]/10 text-[#657A68] border-[#657A68]/30"
+                            : "bg-stone-100 text-stone-700 border-stone-200"
                         }`}
                       >
                         {item.status}
                       </span>
                       {item.isPremium && (
-                        <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 text-[10px] font-black uppercase">
+                        <span className="px-2.5 py-0.5 rounded-md bg-[#D4AF37]/15 text-[#997300] border border-[#D4AF37]/40 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                          <Sparkles className="w-2.5 h-2.5 text-[#D4AF37]" />
                           PREMIUM
                         </span>
                       )}
                     </div>
 
                     {isBoostActive && (
-                      <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-sage text-white text-[10px] font-black uppercase">
-                        <Sparkles className="w-3 h-3" />
+                      <span
+                        style={{ backgroundColor: "#171717", color: "#D4AF37" }}
+                        className="flex items-center gap-1 px-3 py-1 rounded-md border border-[#D4AF37]/50 text-[10px] font-black uppercase tracking-wider shadow-xs"
+                      >
+                        <Zap className="w-3 h-3 text-[#D4AF37] fill-[#D4AF37]" />
                         BOOSTED
                       </span>
                     )}
@@ -186,28 +196,30 @@ export default function MyAdsPage() {
 
                   {/* Title & Info */}
                   <div>
-                    <h3 className="font-black text-dark text-sm uppercase line-clamp-1">
+                    <h3 className="font-black text-[#171717] text-sm sm:text-base uppercase line-clamp-1 group-hover:text-stone-800 transition-colors">
                       {item.title}
                     </h3>
-                    <div className="text-xs text-stone-400 flex items-center gap-1 uppercase mt-0.5">
-                      <MapPin className="w-3 h-3 text-sage" />
-                      {item.phase} • {item.propertyType}
+                    <div className="text-xs text-stone-400 flex items-center gap-1.5 uppercase mt-1">
+                      <MapPin className="w-3.5 h-3.5 text-[#657A68] shrink-0" />
+                      <span>{item.phase} • {item.propertyType}</span>
                     </div>
                   </div>
 
-                  <div className="text-base font-black text-dark">
+                  {/* Price */}
+                  <div className="text-lg font-black text-[#171717] tracking-tight">
                     PKR {Number(item.rentPrice).toLocaleString()}
+                    <span className="text-[11px] text-stone-400 font-bold ml-1">/ MO</span>
                   </div>
 
                   {/* Expiry / Lock Status Box */}
-                  <div className="p-3 bg-[#FBFBF9] rounded-xl border border-stone-100 flex items-center justify-between text-xs">
+                  <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200/70 flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2 text-stone-600 font-bold uppercase">
-                      <Clock className="w-4 h-4 text-stone-400" />
-                      <span>{isLocked ? `${daysRemaining} DAYS REMAINING` : "DURATION EXPIRED"}</span>
+                      <Clock className="w-3.5 h-3.5 text-stone-400" />
+                      <span className="text-[11px]">{isLocked ? `${daysRemaining} DAYS REMAINING` : "DURATION EXPIRED"}</span>
                     </div>
                     {isLocked && (
-                      <span className="flex items-center gap-1 text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-black uppercase">
-                        <Lock className="w-3 h-3" />
+                      <span className="flex items-center gap-1 text-[10px] text-stone-700 bg-stone-200/70 border border-stone-300 px-2 py-0.5 rounded font-black uppercase tracking-wider">
+                        <Lock className="w-3 h-3 text-[#D4AF37]" />
                         LOCKED
                       </span>
                     )}
@@ -215,19 +227,20 @@ export default function MyAdsPage() {
                 </div>
 
                 {/* Card Actions: View Ad + Boost Ad + Delete */}
-                <div className="flex items-center justify-between pt-3 border-t border-stone-100 gap-2">
+                <div className="flex items-center justify-between pt-4 border-t border-stone-100 gap-2">
                   <Link
                     href={`/property/${item.id}`}
-                    className="text-stone-500 hover:text-dark text-xs font-bold uppercase flex items-center gap-1"
+                    className="text-stone-500 hover:text-[#171717] text-xs font-bold uppercase flex items-center gap-1.5 transition-colors py-1"
                   >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    <span>VIEW</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-[#657A68]" />
+                    <span className="font-black">VIEW AD</span>
                   </Link>
 
                   <div className="flex items-center gap-2">
                     {/* BOOST BUTTON */}
                     {isBoostActive ? (
-                      <span className="text-[11px] font-bold text-sage uppercase px-3 py-1.5 bg-sage/10 rounded-lg border border-sage/20">
+                      <span className="text-[11px] font-black text-[#657A68] uppercase px-3.5 py-2 bg-[#657A68]/10 rounded-xl border border-[#657A68]/20 flex items-center gap-1.5">
+                        <Sparkles className="w-3 h-3 text-[#657A68]" />
                         BOOST ACTIVE
                       </span>
                     ) : (
@@ -235,15 +248,15 @@ export default function MyAdsPage() {
                         type="button"
                         disabled={boostingId === item.id}
                         onClick={() => handleBoostClick(item.id)}
-                        style={{ backgroundColor: "#1c1917", color: "#ffffff" }}
-                        className="flex items-center gap-1 text-xs font-black uppercase px-3 py-1.5 rounded-lg bg-dark hover:bg-stone-800 text-white transition-all cursor-pointer disabled:opacity-50"
+                        style={{ backgroundColor: "#171717", color: "#ffffff" }}
+                        className="flex items-center gap-1.5 text-xs font-black uppercase px-4 py-2 rounded-xl border border-[#D4AF37]/40 hover:border-[#D4AF37] hover:bg-stone-900 transition-all cursor-pointer disabled:opacity-50 shadow-sm"
                       >
                         {boostingId === item.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-sage" />
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#D4AF37]" />
                         ) : (
-                          <Zap className="w-3.5 h-3.5 text-sage" />
+                          <Zap className="w-3.5 h-3.5 text-[#D4AF37]" />
                         )}
-                        <span>BOOST AD</span>
+                        <span className="text-white font-black tracking-wider">BOOST AD</span>
                       </button>
                     )}
 
@@ -251,13 +264,17 @@ export default function MyAdsPage() {
                     <button
                       type="button"
                       onClick={() => handleDeleteClick(item)}
-                      className={`flex items-center gap-1 text-xs font-black uppercase px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                      className={`flex items-center gap-1.5 text-xs font-black uppercase px-3.5 py-2 rounded-xl border transition-all cursor-pointer ${
                         isLocked
-                          ? "bg-stone-50 border-stone-200 text-stone-400 hover:text-stone-600"
-                          : "bg-red-50 border-red-200 text-red-600 hover:bg-red-600 hover:text-white"
+                          ? "bg-stone-100 border-stone-200 text-stone-400 hover:bg-stone-200/70 hover:text-stone-600"
+                          : "bg-red-50 border-red-200 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 shadow-2xs"
                       }`}
                     >
-                      {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      {isLocked ? (
+                        <Lock className="w-3.5 h-3.5" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5" />
+                      )}
                       <span>{isLocked ? "LOCKED" : "DELETE"}</span>
                     </button>
                   </div>
@@ -270,28 +287,28 @@ export default function MyAdsPage() {
 
       {/* 14-Day Lock Warning Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-stone-200 relative animate-in fade-in zoom-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-stone-200 relative animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={() => setModalOpen(false)}
-              className="absolute top-5 right-5 p-1.5 rounded-full text-stone-400 hover:text-dark hover:bg-stone-100 cursor-pointer"
+              className="absolute top-5 right-5 p-2 rounded-full text-stone-400 hover:text-[#171717] hover:bg-stone-100 transition-all cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto">
-              <AlertTriangle className="w-6 h-6" />
+            <div className="w-14 h-14 rounded-2xl bg-[#D4AF37]/15 text-[#997300] border border-[#D4AF37]/30 flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-7 h-7 text-[#D4AF37]" />
             </div>
 
-            <div className="text-center space-y-2">
-              <h3 className="text-lg font-black uppercase text-dark">
+            <div className="text-center space-y-2.5">
+              <h3 className="text-lg font-black uppercase text-[#171717] tracking-tight">
                 AD CANNOT BE DELETED
               </h3>
               <p className="text-xs text-stone-600 uppercase font-medium leading-relaxed">
                 ALL LISTINGS ON GO RENTAL DHA ARE LOCKED FOR A MINIMUM ACTIVE DURATION OF 14 DAYS (2 WEEKS).
               </p>
               <div className="pt-2">
-                <span className="inline-block px-3 py-1 rounded-full bg-stone-100 text-stone-700 text-xs font-black uppercase">
+                <span className="inline-block px-4 py-1.5 rounded-full bg-stone-100 border border-stone-200 text-stone-800 text-xs font-black uppercase tracking-wider">
                   {modalDaysLeft} DAYS REMAINING BEFORE UNLOCK
                 </span>
               </div>
@@ -300,7 +317,8 @@ export default function MyAdsPage() {
             <button
               type="button"
               onClick={() => setModalOpen(false)}
-              className="w-full py-3 bg-dark text-white rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer hover:bg-stone-800 transition-all"
+              style={{ backgroundColor: "#171717", color: "#ffffff" }}
+              className="w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-wider border border-[#D4AF37]/40 hover:border-[#D4AF37] hover:bg-stone-900 transition-all cursor-pointer shadow-lg"
             >
               UNDERSTOOD
             </button>
