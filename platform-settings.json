@@ -1,0 +1,12 @@
+{
+  "id": "global_config",
+  "siteName": "GO RENTAL DHA",
+  "supportPhone": "+92 316 2802558",
+  "supportEmail": "support@gorentaldha.com",
+  "defaultFreeCredits": 3,
+  "adExpiryDays": 14,
+  "premiumExpiryDays": 7,
+  "maintenanceMode": false,
+  "allowRegistration": true,
+  "autoApproveListings": true
+}

@@ -158,7 +158,7 @@ export default function SignupPage() {
                     : "border-stone-200 text-stone-500"
                 }`}
               >
-                DIRECT CLIENT
+                 CLIENT
               </button>
             </div>
           </div>
