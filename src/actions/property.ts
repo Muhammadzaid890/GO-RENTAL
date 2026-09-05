@@ -15,7 +15,30 @@ export interface PropertyFilterParams {
   page?: string;
 }
 
-// 1. GET FILTERED PROPERTIES WITH PAGINATION
+// Helper: Smart Type Mapping (Apartment/Flat ko harmonize karne ke liye)
+function getTargetPropertyTypes(rawType: string): string[] | null {
+  const upper = rawType.trim().toUpperCase();
+
+  if (upper === "HOMES" || upper === "ALL TYPES" || upper === "ALL" || !upper) {
+    return null;
+  }
+
+  if (upper.includes("APARTMENT") || upper.includes("FLAT")) {
+    return ["APARTMENT", "FLAT", "CONDOS", "PENTHOUSE"];
+  }
+
+  if (upper.includes("PORTION")) {
+    return ["PORTION", "UPPER PORTION", "LOWER PORTION"];
+  }
+
+  if (upper.includes("HOUSE") || upper.includes("BUNGALOW")) {
+    return ["HOUSE", "BUNGALOW", "FARM HOUSE"];
+  }
+
+  return [upper];
+}
+
+// 1. GET FILTERED PROPERTIES WITH PAGINATION (SMART APARTMENT & FLAT MATCHING)
 export async function getFilteredProperties(params: PropertyFilterParams) {
   try {
     const page = Math.max(1, Number(params.page) || 1);
@@ -25,6 +48,7 @@ export async function getFilteredProperties(params: PropertyFilterParams) {
       status: "APPROVED",
     };
 
+    // 1. Phase Filter
     if (params.phase && params.phase !== "ALL PHASES" && params.phase !== "ALL") {
       whereClause.phase = {
         contains: params.phase,
@@ -32,22 +56,57 @@ export async function getFilteredProperties(params: PropertyFilterParams) {
       };
     }
 
-    if (params.type && params.type !== "HOMES" && params.type !== "ALL TYPES") {
-      whereClause.propertyType = {
-        contains: params.type,
-        mode: "insensitive",
-      };
+    // 2. Property Type Filter (Apartment & Flat Synchronization)
+    if (params.type) {
+      const mappedTypes = getTargetPropertyTypes(params.type);
+      if (mappedTypes && mappedTypes.length > 0) {
+        whereClause.OR = mappedTypes.map((t) => ({
+          propertyType: {
+            contains: t,
+            mode: "insensitive",
+          },
+        }));
+      }
     }
 
+    // 3. Search Bar Keyword Filter
     if (params.search && params.search.trim()) {
       const q = params.search.trim();
-      whereClause.OR = [
+      const qUpper = q.toUpperCase();
+      const isApartmentSearch = qUpper.includes("APARTMENT") || qUpper.includes("FLAT");
+
+      const textSearchConditions: any[] = [
         { title: { contains: q, mode: "insensitive" } },
         { description: { contains: q, mode: "insensitive" } },
         { phase: { contains: q, mode: "insensitive" } },
       ];
+
+      // Agar user search input mein bhi apartment ya flat likhe to propertyType se match kare
+      if (isApartmentSearch) {
+        textSearchConditions.push(
+          { propertyType: { contains: "APARTMENT", mode: "insensitive" } },
+          { propertyType: { contains: "FLAT", mode: "insensitive" } },
+          { propertyType: { contains: "PENTHOUSE", mode: "insensitive" } }
+        );
+      } else {
+        textSearchConditions.push({
+          propertyType: { contains: q, mode: "insensitive" },
+        });
+      }
+
+      // Merge with existing OR conditions if type was already filtered
+      if (whereClause.OR) {
+        whereClause.AND = [
+          { OR: whereClause.OR },
+          { OR: textSearchConditions },
+        ];
+        delete whereClause.OR;
+      } else {
+        whereClause.OR = textSearchConditions;
+      }
     }
 
+    // 4. Price Filters
     if (params.minPrice || params.maxPrice) {
       whereClause.rentPrice = {};
       if (params.minPrice) {
@@ -58,6 +117,7 @@ export async function getFilteredProperties(params: PropertyFilterParams) {
       }
     }
 
+    // 5. Area Filters
     if (params.minArea || params.maxArea) {
       whereClause.areaSqYards = {};
       if (params.minArea) {
@@ -286,7 +346,6 @@ export async function deleteAgentProperty(propertyId: string) {
       return { success: false, error: "UNAUTHORIZED ACTION." };
     }
 
-    // 14-day lock check (admins can override)
     const now = new Date();
     if (session.role !== "ADMIN" && property.expiresAt && property.expiresAt > now) {
       return {
@@ -309,7 +368,7 @@ export async function deleteAgentProperty(propertyId: string) {
   }
 }
 
-// 5. BOOST RENTAL AD (Checks and cuts 1 boost credit from user wallet)
+// 5. BOOST RENTAL AD
 export async function boostRentalAd(propertyId: string, days: number | string = 7) {
   try {
     const session = await getSessionUser();
@@ -345,7 +404,6 @@ export async function boostRentalAd(propertyId: string, days: number | string = 
 
     const isAdmin = user.role === "ADMIN";
 
-    // Non-admin credit check
     if (!isAdmin && (!user.wallet || user.wallet.boostCredits < 1)) {
       return {
         success: false,
@@ -353,7 +411,6 @@ export async function boostRentalAd(propertyId: string, days: number | string = 
       };
     }
 
-    // Transaction to update property and decrement 1 boost credit
     const updated = await prisma.$transaction(async (tx) => {
       const prop = await tx.property.update({
         where: { id: propertyId },
