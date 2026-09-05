@@ -17,7 +17,6 @@ import {
   UploadCloud,
   X,
   ArrowLeft,
-  Sparkles,
   CheckCircle2,
   AlertCircle,
   Flame,
@@ -28,6 +27,10 @@ import {
   Car,
   Wind,
   Loader2,
+  Search,
+  Building,
+  Layers,
+  Sparkles,
   Flame as GasIcon,
 } from "lucide-react";
 
@@ -52,40 +55,76 @@ const commercialTypes = [
   "Other",
 ];
 
-// 2. Pakistan Cities
-const pakistanCities = [
-  { name: "Karachi", active: true },
-  { name: "Lahore (Coming Soon)", active: false },
-  { name: "Islamabad (Coming Soon)", active: false },
-  { name: "Rawalpindi (Coming Soon)", active: false },
-  { name: "Faisalabad (Coming Soon)", active: false },
-  { name: "Multan (Coming Soon)", active: false },
-  { name: "Peshawar (Coming Soon)", active: false },
-  { name: "Quetta (Coming Soon)", active: false },
-  { name: "Hyderabad (Coming Soon)", active: false },
-  { name: "Gwadar (Coming Soon)", active: false },
+// 2. Structured Location Hub Data
+const projectClusters = [
+  {
+    id: "EMAAR",
+    title: "EMAAR OCEANFRONT",
+    subtitle: "Crescent Bay • Phase 8",
+    badge: "LUXURY WATERFRONT",
+    locations: [
+      "Emaar Pearl Towers (Tower 1, 2, 3)",
+      "Emaar Reef Towers",
+      "Emaar Coral Towers",
+      "Emaar The Views",
+      "Emaar Panorama",
+      "Emaar Crescent Bay - General",
+    ],
+  },
+  {
+    id: "HMR",
+    title: "HMR & AA BEACHFRONT",
+    subtitle: "Coastline Luxury • Phase 8",
+    badge: "PREMIUM SEAFRONT",
+    locations: [
+      "HMR Waterfront - H1 Tower",
+      "HMR Waterfront - Saima Tower",
+      "HMR Waterfront - Saima Marina",
+      "HMR Waterfront - Goldcrest Bay Sands",
+      "HMR Waterfront - Beach Terraces",
+      "HMR Waterfront - The Tilt",
+      "AA Waterfront / Beachfront",
+      "HMR Waterfront - General",
+    ],
+  },
+  {
+    id: "CREEK",
+    title: "CREEK VISTAS & MARINA",
+    subtitle: "Golf Club & Waterfront",
+    badge: "EXCLUSIVE",
+    locations: [
+      "Creek Vistas Apartments",
+      "Creek Marina Residences",
+      "The Arkadians (Akrabi)",
+      "DHA Golf Club Residences",
+    ],
+  },
+  {
+    id: "DHA",
+    title: "DHA KARACHI PHASES",
+    subtitle: "Standard Residential Phases",
+    badge: "VERIFIED PHASES",
+    locations: [
+      "Phase 1",
+      "Phase 2",
+      "Phase 2 Ext",
+      "Phase 4",
+      "Phase 5",
+      "Phase 5 Ext",
+      "Phase 6",
+      "Phase 7",
+      "Phase 7 Ext",
+      "Phase 8 (Zone A - D)",
+      "Phase 8 (Sahil/Beachfront)",
+      "Phase 8 (General)",
+    ],
+  },
 ];
 
-// 3. DHA Phases
-const dhaPhases = [
-  "Phase 1",
-  "Phase 2",
-  "Phase 2 Ext",
-  "Phase 4",
-  "Phase 5",
-  "Phase 5 Ext",
-  "Phase 6",
-  "Phase 7",
-  "Phase 7 Ext",
-  "Phase 8",
-  "Phase 8 (Zone A - D)",
-  "Phase 8 (Sahil/Emaar)",
-];
+// 3. Area Units
+const areaUnits = ["Sq. Feet", "Sq. Yard", "Marla", "Kanal", "Sq. Meters"];
 
-// 4. Area Units
-const areaUnits = ["Sq. Yard", "Sq. Feet", "Sq. Meters", "Marla", "Kanal"];
-
-// 5. Amenities
+// 4. Amenities
 const availableAmenities = [
   { id: "electricity", label: "Electricity / Generator", icon: Zap },
   { id: "water", label: "Line Water / Sweet Water", icon: Droplets },
@@ -105,17 +144,23 @@ export default function PostAdPage() {
 
   // Form States
   const [category, setCategory] = useState<"HOMES" | "COMMERCIAL">("HOMES");
-  const [selectedType, setSelectedType] = useState("House");
-  const [selectedCity, setSelectedCity] = useState("Karachi");
-  const [selectedPhase, setSelectedPhase] = useState("Phase 5");
+  const [selectedType, setSelectedType] = useState("Flat");
+  
+  // Luxury Location Hub States
+  const [activeCluster, setActiveCluster] = useState("EMAAR");
+  const [selectedPhase, setSelectedPhase] = useState("Emaar Pearl Towers (Tower 1, 2, 3)");
+  const [locationSearch, setLocationSearch] = useState("");
+
   const [areaSize, setAreaSize] = useState("");
-  const [areaUnit, setAreaUnit] = useState("Sq. Yard");
+  const [areaUnit, setAreaUnit] = useState("Sq. Feet");
   const [rentPrice, setRentPrice] = useState("");
   const [bedrooms, setBedrooms] = useState("3");
   const [bathrooms, setBathrooms] = useState("3");
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([
     "electricity",
     "water",
+    "security",
+    "lift",
   ]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -155,7 +200,6 @@ export default function PostAdPage() {
     }
   };
 
-  // Automated Direct Upload to Cloudinary (Bypasses heavy server payload limits)
   const handleFilesSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -190,7 +234,6 @@ export default function PostAdPage() {
         );
 
         if (!uploadRes.ok) {
-          // Fallback if preset is strict
           throw new Error("FAILED TO UPLOAD IMAGE TO CLOUD STORAGE.");
         }
 
@@ -238,17 +281,14 @@ export default function PostAdPage() {
 
     try {
       const amenitiesText = selectedAmenities
-        .map(
-          (a) => availableAmenities.find((item) => item.id === a)?.label
-        )
+        .map((a) => availableAmenities.find((item) => item.id === a)?.label)
         .filter(Boolean)
         .join(", ");
 
-      const fullDescription = `${description.trim()}\n\nAMENITIES: ${
+      const fullDescription = `[UNIT: ${areaUnit}]\n\n${description.trim()}\n\nAMENITIES: ${
         amenitiesText || "Standard Amenities"
       }`;
 
-      // Clean flat payload
       const res = await createRentalAd({
         title: title.trim().toUpperCase(),
         description: fullDescription,
@@ -286,11 +326,15 @@ export default function PostAdPage() {
   }
 
   const isAdmin = currentUser?.role === "ADMIN";
+  const currentClusterData = projectClusters.find((c) => c.id === activeCluster);
+  const visibleTowers = currentClusterData?.locations.filter((loc) =>
+    loc.toLowerCase().includes(locationSearch.toLowerCase())
+  ) || [];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       {/* Top Header */}
-      <div className="flex items-center justify-between border-b border-stone-200/90 pb-5">
+      <div className="flex items-center justify-between border-b border-stone-200 pb-5">
         <div className="flex items-center gap-3">
           <Link
             href="/"
@@ -300,18 +344,18 @@ export default function PostAdPage() {
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
-            <h1 className="text-xl sm:text-2xl font-black uppercase text-[#1A1F1C] tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black uppercase text-[#171717] tracking-tight">
               POST RENTAL AD
             </h1>
             <p className="text-[11px] font-bold uppercase text-stone-400">
-              DHA KARACHI VERIFIED DIRECTORY
+              DHA KARACHI, EMAAR, HMR & CREEK VISTAS WATERFRONT DIRECTORY
             </p>
           </div>
         </div>
 
         {isAdmin && (
           <span className="px-3 py-1 bg-red-100 border border-red-200 text-[#E53935] text-[10px] font-black uppercase rounded-xl">
-            ADMIN PORTAL
+            ADMIN ACCESS
           </span>
         )}
       </div>
@@ -331,33 +375,32 @@ export default function PostAdPage() {
         </div>
       )}
 
-      {/* Main Form Container */}
+      {/* Form Container */}
       <form
         onSubmit={handleSubmit}
         className="bg-white p-6 sm:p-9 rounded-3xl border border-stone-200/90 shadow-sm space-y-8"
       >
         {/* 1. SELECT PROPERTY TYPE */}
         <div className="space-y-3.5">
-          <label className="text-xs font-black uppercase text-[#1A1F1C] tracking-wide block">
+          <label className="text-xs font-black uppercase text-[#171717] tracking-wide block">
             1. SELECT PROPERTY TYPE *
           </label>
 
-          {/* Category Switcher */}
           <div className="grid grid-cols-2 p-1.5 bg-[#FBFBF9] border border-stone-200 rounded-2xl max-w-md">
             <button
               type="button"
               onClick={() => {
                 setCategory("HOMES");
-                setSelectedType("House");
+                setSelectedType("Flat");
               }}
               className={`py-2.5 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 transition-all cursor-pointer ${
                 category === "HOMES"
-                  ? "bg-white text-[#1A1F1C] shadow-xs border border-stone-200/80"
+                  ? "bg-white text-[#171717] shadow-xs border border-stone-200/80"
                   : "text-stone-400 hover:text-stone-700"
               }`}
             >
               <Home className="w-4 h-4 text-[#657A68]" />
-              <span>HOMES</span>
+              <span>HOMES / RESIDENTIAL</span>
             </button>
             <button
               type="button"
@@ -367,7 +410,7 @@ export default function PostAdPage() {
               }}
               className={`py-2.5 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 transition-all cursor-pointer ${
                 category === "COMMERCIAL"
-                  ? "bg-white text-[#1A1F1C] shadow-xs border border-stone-200/80"
+                  ? "bg-white text-[#171717] shadow-xs border border-stone-200/80"
                   : "text-stone-400 hover:text-stone-700"
               }`}
             >
@@ -376,7 +419,6 @@ export default function PostAdPage() {
             </button>
           </div>
 
-          {/* Subtypes Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
             {(category === "HOMES" ? homesTypes : commercialTypes).map((t) => (
               <button
@@ -395,67 +437,146 @@ export default function PostAdPage() {
           </div>
         </div>
 
-        {/* 2. SELECT CITY & LOCATION (DHA PHASES) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-stone-100">
-          {/* City Dropdown */}
-          <div className="space-y-2">
-            <label className="text-xs font-black uppercase text-[#1A1F1C]">
-              2. SELECT CITY *
-            </label>
-            <div className="relative">
-              <select
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
-                className="w-full px-4 py-3 bg-[#FBFBF9] border border-stone-200 rounded-2xl text-xs font-bold uppercase outline-none focus:border-[#657A68] appearance-none cursor-pointer"
-              >
-                {pakistanCities.map((c) => (
-                  <option key={c.name} value={c.name} disabled={!c.active}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              <MapPin className="w-4 h-4 text-[#657A68] absolute right-3.5 top-3.5 pointer-events-none" />
+        {/* 2. PROFESSIONAL LOCATION DASHBOARD */}
+        <div className="space-y-4 pt-6 border-t border-stone-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <label className="text-xs font-black uppercase text-[#171717] tracking-wide flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-[#657A68]" />
+                <span>2. SELECT TOWER / DHA LOCATION (INTERACTIVE HUB) *</span>
+              </label>
+              <p className="text-[10px] font-bold text-stone-400 uppercase mt-0.5">
+                SELECT A WATERFRONT PROJECT CLUSTER THEN CHOOSE YOUR EXACT BUILDING OR PHASE
+              </p>
             </div>
-            <span className="text-[10px] font-bold uppercase text-stone-400 block pl-1">
-              * Currently active for Karachi DHA only
-            </span>
+
+            {/* Quick Search */}
+            <div className="relative w-full sm:w-64">
+              <input
+                type="text"
+                placeholder="SEARCH TOWER / PHASE..."
+                value={locationSearch}
+                onChange={(e) => setLocationSearch(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 bg-[#FBFBF9] border border-stone-200 rounded-xl text-xs font-bold uppercase outline-none focus:border-[#657A68]"
+              />
+              <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-2.5 pointer-events-none" />
+            </div>
           </div>
 
-          {/* Location / DHA Phase */}
-          <div className="space-y-2">
-            <label className="text-xs font-black uppercase text-[#1A1F1C]">
-              3. DHA LOCATION / PHASE *
-            </label>
-            <div className="relative">
-              <select
-                value={selectedPhase}
-                onChange={(e) => setSelectedPhase(e.target.value)}
-                className="w-full px-4 py-3 bg-[#FBFBF9] border border-stone-200 rounded-2xl text-xs font-bold uppercase outline-none focus:border-[#657A68] appearance-none cursor-pointer"
-              >
-                {dhaPhases.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-              <Building2 className="w-4 h-4 text-[#657A68] absolute right-3.5 top-3.5 pointer-events-none" />
+          {/* Project Hub Tabs */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {projectClusters.map((cluster) => {
+              const isActive = activeCluster === cluster.id;
+              return (
+                <button
+                  key={cluster.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveCluster(cluster.id);
+                    setLocationSearch("");
+                  }}
+                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between ${
+                    isActive
+                      ? "bg-[#171717] text-white border-[#D4AF37]/60 shadow-md"
+                      : "bg-[#FBFBF9] hover:bg-stone-100 border-stone-200 text-stone-700"
+                  }`}
+                >
+                  <div>
+                    <span
+                      className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md inline-block mb-1.5 ${
+                        isActive
+                          ? "bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30"
+                          : "bg-stone-200/80 text-stone-600"
+                      }`}
+                    >
+                      {cluster.badge}
+                    </span>
+                    <h4 className="text-xs font-black uppercase tracking-tight leading-tight">
+                      {cluster.title}
+                    </h4>
+                  </div>
+                  <p className={`text-[10px] font-bold uppercase mt-2 ${isActive ? "text-stone-400" : "text-stone-500"}`}>
+                    {cluster.subtitle}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Towers & Phases Card Grid */}
+          <div className="bg-[#FBFBF9] border border-stone-200/90 rounded-3xl p-4 sm:p-5 space-y-3 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black uppercase text-stone-500 tracking-wider">
+                AVAILABLE BUILDINGS IN {currentClusterData?.title}:
+              </span>
+              <span className="text-[10px] font-bold text-stone-400 uppercase">
+                {visibleTowers.length} TOWERS
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+              {visibleTowers.map((loc) => {
+                const isSelected = selectedPhase === loc;
+                return (
+                  <button
+                    key={loc}
+                    type="button"
+                    onClick={() => setSelectedPhase(loc)}
+                    className={`p-3 rounded-xl border text-left text-xs font-black uppercase transition-all flex items-center justify-between gap-2 cursor-pointer ${
+                      isSelected
+                        ? "bg-[#171717] text-white border-[#D4AF37] shadow-sm"
+                        : "bg-white border-stone-200 hover:border-stone-300 text-stone-800 hover:bg-stone-50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <Building className={`w-3.5 h-3.5 shrink-0 ${isSelected ? "text-[#D4AF37]" : "text-[#657A68]"}`} />
+                      <span className="truncate">{loc}</span>
+                    </div>
+                    {isSelected && (
+                      <div className="w-5 h-5 rounded-full bg-[#D4AF37] text-[#171717] flex items-center justify-center shrink-0">
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {visibleTowers.length === 0 && (
+              <div className="p-6 text-center text-xs font-bold uppercase text-stone-400">
+                NO TOWER FOUND MATCHING YOUR SEARCH QUERY.
+              </div>
+            )}
+          </div>
+
+          {/* Active Selection Breadcrumb Bar */}
+          <div className="p-3.5 bg-stone-900 text-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 border border-[#D4AF37]/30 shadow-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-[#D4AF37] animate-ping" />
+              <span className="text-[10px] font-black uppercase text-stone-400">
+                CURRENT SELECTED LOCATION:
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-black uppercase text-[#D4AF37]">
+              <MapPin className="w-3.5 h-3.5" />
+              <span>{selectedPhase}</span>
+              <span className="text-stone-400 font-bold">• KARACHI</span>
             </div>
           </div>
         </div>
 
-        {/* 3. AREA SIZE & MONTHLY RENT */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-stone-100">
-          {/* Area Size */}
+        {/* 3. AREA SIZE WITH DYNAMIC UNIT & MONTHLY RENT */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-6 border-t border-stone-100">
           <div className="space-y-2">
-            <label className="text-xs font-black uppercase text-[#1A1F1C]">
-              4. AREA SIZE *
+            <label className="text-xs font-black uppercase text-[#171717]">
+              3. AREA SIZE & MEASUREMENT UNIT *
             </label>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <input
                   type="number"
                   required
-                  placeholder="E.G. 500"
+                  placeholder="E.G. 1500"
                   value={areaSize}
                   onChange={(e) => setAreaSize(e.target.value)}
                   className="w-full px-4 py-3 bg-[#FBFBF9] border border-stone-200 rounded-2xl text-xs font-bold uppercase outline-none focus:border-[#657A68]"
@@ -465,7 +586,7 @@ export default function PostAdPage() {
               <select
                 value={areaUnit}
                 onChange={(e) => setAreaUnit(e.target.value)}
-                className="px-3 py-3 bg-[#FBFBF9] border border-stone-200 rounded-2xl text-xs font-black uppercase outline-none focus:border-[#657A68] cursor-pointer shrink-0"
+                className="px-3.5 py-3 bg-[#FBFBF9] border border-stone-200 rounded-2xl text-xs font-black uppercase outline-none focus:border-[#657A68] cursor-pointer shrink-0"
               >
                 {areaUnits.map((u) => (
                   <option key={u} value={u}>
@@ -476,10 +597,9 @@ export default function PostAdPage() {
             </div>
           </div>
 
-          {/* Monthly Rent */}
           <div className="space-y-2">
-            <label className="text-xs font-black uppercase text-[#1A1F1C]">
-              5. MONTHLY RENT (PKR) *
+            <label className="text-xs font-black uppercase text-[#171717]">
+              4. MONTHLY RENT (PKR) *
             </label>
             <div className="relative">
               <input
@@ -498,13 +618,12 @@ export default function PostAdPage() {
         {/* 4. BEDS & BATHS */}
         {category === "HOMES" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-stone-100">
-            {/* Bedrooms */}
             <div className="space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-black uppercase text-[#1A1F1C]">
+              <div className="flex items-center gap-1.5 text-xs font-black uppercase text-[#171717]">
                 <div className="w-6 h-6 rounded-lg bg-[#657A68]/15 text-[#657A68] flex items-center justify-center">
                   <Bed className="w-3.5 h-3.5" />
                 </div>
-                <span>6. BEDROOMS</span>
+                <span>5. BEDROOMS</span>
               </div>
               <div className="grid grid-cols-6 gap-1.5">
                 {["1", "2", "3", "4", "5", "6+"].map((b) => (
@@ -524,13 +643,12 @@ export default function PostAdPage() {
               </div>
             </div>
 
-            {/* Bathrooms */}
             <div className="space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-black uppercase text-[#1A1F1C]">
+              <div className="flex items-center gap-1.5 text-xs font-black uppercase text-[#171717]">
                 <div className="w-6 h-6 rounded-lg bg-[#657A68]/15 text-[#657A68] flex items-center justify-center">
                   <Bath className="w-3.5 h-3.5" />
                 </div>
-                <span>7. BATHROOMS</span>
+                <span>6. BATHROOMS</span>
               </div>
               <div className="grid grid-cols-6 gap-1.5">
                 {["1", "2", "3", "4", "5", "6+"].map((b) => (
@@ -554,8 +672,8 @@ export default function PostAdPage() {
 
         {/* 5. AMENITIES */}
         <div className="space-y-2.5 pt-4 border-t border-stone-100">
-          <label className="text-xs font-black uppercase text-[#1A1F1C] tracking-wide block">
-            8. AMENITIES & HIGHLIGHTS
+          <label className="text-xs font-black uppercase text-[#171717] tracking-wide block">
+            7. AMENITIES & HIGHLIGHTS
           </label>
           <div className="flex flex-wrap gap-2">
             {availableAmenities.map((amenity) => {
@@ -587,13 +705,13 @@ export default function PostAdPage() {
 
         {/* 6. PROPERTY TITLE */}
         <div className="space-y-2 pt-4 border-t border-stone-100">
-          <label className="text-xs font-black uppercase text-[#1A1F1C]">
-            9. PROPERTY TITLE *
+          <label className="text-xs font-black uppercase text-[#171717]">
+            8. PROPERTY TITLE *
           </label>
           <input
             type="text"
             required
-            placeholder="E.G. BRAND NEW 500 SQ YDS FULL HOUSE FOR RENT IN DHA PHASE 6"
+            placeholder="E.G. LUXURY 3-BED SEA FACING APARTMENT IN EMAAR PEARL TOWERS"
             value={title}
             onChange={(e) => setTitle(e.target.value.toUpperCase())}
             className="w-full px-4 py-3 bg-[#FBFBF9] border border-stone-200 rounded-2xl text-xs font-bold uppercase outline-none focus:border-[#657A68]"
@@ -602,30 +720,29 @@ export default function PostAdPage() {
 
         {/* 7. DETAILED DESCRIPTION */}
         <div className="space-y-2 pt-4 border-t border-stone-100">
-          <label className="text-xs font-black uppercase text-[#1A1F1C]">
-            10. DETAILED DESCRIPTION
+          <label className="text-xs font-black uppercase text-[#171717]">
+            9. DETAILED DESCRIPTION
           </label>
           <textarea
             rows={4}
-            placeholder="MENTION ROAD WIDTH, FIXTURES, BASEMENT/SERVANT QUARTER, FLOOR DETAILS..."
+            placeholder="MENTION TOWER NAME, FLOOR NUMBER, SEA FACING VIEW, PARKING SLOTS, BALCONY, FIXTURES..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="w-full px-4 py-3 bg-[#FBFBF9] border border-stone-200 rounded-2xl text-xs font-medium outline-none focus:border-[#657A68]"
           />
         </div>
 
-        {/* 8. DIRECT DEVICE PHOTO UPLOAD & PREVIEWS (1 TO 5 PHOTOS) */}
+        {/* 8. DEVICE PHOTO UPLOAD & PREVIEWS */}
         <div className="space-y-3 pt-4 border-t border-stone-100">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-black uppercase text-[#1A1F1C]">
-              11. PROPERTY PHOTOS (UP TO 5 PHOTOS) *
+            <label className="text-xs font-black uppercase text-[#171717]">
+              10. PROPERTY PHOTOS (UP TO 5 PHOTOS) *
             </label>
             <span className="text-[10px] font-bold text-stone-400 uppercase">
               {images.length}/5 UPLOADED
             </span>
           </div>
 
-          {/* Hidden File Input */}
           <input
             type="file"
             ref={fileInputRef}
@@ -635,7 +752,6 @@ export default function PostAdPage() {
             className="hidden"
           />
 
-          {/* Upload Dropzone Box */}
           {images.length < 5 && (
             <div
               onClick={() => !isUploading && fileInputRef.current?.click()}
@@ -651,7 +767,7 @@ export default function PostAdPage() {
                 )}
               </div>
               <div className="space-y-0.5">
-                <span className="text-xs font-black uppercase text-[#1A1F1C] block">
+                <span className="text-xs font-black uppercase text-[#171717] block">
                   {isUploading
                     ? uploadProgressText || "UPLOADING PHOTOS..."
                     : "CLICK TO UPLOAD FROM DEVICE / MOBILE"}
@@ -663,7 +779,6 @@ export default function PostAdPage() {
             </div>
           )}
 
-          {/* Live Thumbnail Grid with Remove Button */}
           {images.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
               {images.map((imgSrc, idx) => (
@@ -697,7 +812,7 @@ export default function PostAdPage() {
           )}
         </div>
 
-        {/* 9. ADMIN EXCLUSIVE: FIRE-RED PREMIUM PROPERTY TOGGLE */}
+        {/* 9. ADMIN EXCLUSIVE: PREMIUM TOGGLE */}
         {isAdmin && (
           <div className="p-4 bg-red-50/90 border border-red-200 rounded-3xl flex items-center justify-between gap-4">
             <div className="space-y-0.5">
@@ -728,8 +843,8 @@ export default function PostAdPage() {
         <button
           type="submit"
           disabled={isSubmitting || isUploading}
-          style={{ backgroundColor: "#1A1F1C", color: "#ffffff" }}
-          className="w-full py-4 rounded-2xl text-xs font-black uppercase tracking-wider shadow-md hover:bg-stone-800 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+          style={{ backgroundColor: "#171717", color: "#ffffff" }}
+          className="w-full py-4 rounded-2xl text-xs font-black uppercase tracking-wider shadow-md hover:bg-stone-800 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 border border-[#D4AF37]/30"
         >
           {isSubmitting ? (
             <span>PUBLISHING PROPERTY...</span>

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { getSystemSettings, updateSystemSettings } from "@/actions/admin";
 import {
-  Settings,
   Save,
   Loader2,
   CheckCircle2,
@@ -37,21 +36,26 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       setLoading(true);
-      const res = await getSystemSettings();
-      if (res.success && res.data) {
-        setFormData({
-          siteName: res.data.siteName || "GO RENTAL DHA",
-          supportPhone: res.data.supportPhone || "",
-          supportEmail: res.data.supportEmail || "",
-          defaultFreeCredits: res.data.defaultFreeCredits ?? 3,
-          adExpiryDays: res.data.adExpiryDays ?? 14,
-          premiumExpiryDays: res.data.premiumExpiryDays ?? 7,
-          maintenanceMode: Boolean(res.data.maintenanceMode),
-          allowRegistration: Boolean(res.data.allowRegistration),
-          autoApproveListings: Boolean(res.data.autoApproveListings),
-        });
+      try {
+        const res = await getSystemSettings();
+        if (res.success && res.data) {
+          setFormData({
+            siteName: res.data.siteName || "GO RENTAL DHA",
+            supportPhone: res.data.supportPhone || "",
+            supportEmail: res.data.supportEmail || "",
+            defaultFreeCredits: Number(res.data.defaultFreeCredits ?? 3),
+            adExpiryDays: Number(res.data.adExpiryDays ?? 14),
+            premiumExpiryDays: Number(res.data.premiumExpiryDays ?? 7),
+            maintenanceMode: Boolean(res.data.maintenanceMode),
+            allowRegistration: Boolean(res.data.allowRegistration),
+            autoApproveListings: Boolean(res.data.autoApproveListings),
+          });
+        }
+      } catch (err: any) {
+        setErrorMsg("FAILED TO LOAD SETTINGS CONFIGURATION.");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchSettings();
@@ -63,14 +67,18 @@ export default function AdminSettingsPage() {
     setErrorMsg("");
     setSuccessMsg("");
 
-    const res = await updateSystemSettings(formData);
-    setSaving(false);
-
-    if (res.success) {
-      setSuccessMsg(res.message || "SETTINGS SAVED SUCCESSFULLY!");
-      setTimeout(() => setSuccessMsg(""), 5000);
-    } else {
-      setErrorMsg(res.error || "FAILED TO SAVE SETTINGS.");
+    try {
+      const res = await updateSystemSettings(formData);
+      if (res.success) {
+        setSuccessMsg(res.message || "SETTINGS SAVED SUCCESSFULLY!");
+        setTimeout(() => setSuccessMsg(""), 4000);
+      } else {
+        setErrorMsg(res.error || "FAILED TO SAVE SETTINGS.");
+      }
+    } catch (err: any) {
+      setErrorMsg(err?.message || "AN UNEXPECTED ERROR OCCURRED.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -78,7 +86,7 @@ export default function AdminSettingsPage() {
     return (
       <div className="p-16 text-center text-xs font-black uppercase text-stone-400 flex items-center justify-center gap-2">
         <Loader2 className="w-4 h-4 animate-spin text-[#D4AF37]" />
-        <span>LOADING SYSTEM SETTINGS FROM DATABASE...</span>
+        <span>LOADING SYSTEM CONFIGURATION...</span>
       </div>
     );
   }
@@ -91,7 +99,7 @@ export default function AdminSettingsPage() {
           PLATFORM & SYSTEM CONFIGURATION
         </h1>
         <p className="text-xs text-stone-500 uppercase mt-0.5 font-bold">
-          UPDATE GLOBAL PLATFORM PARAMETERS, TIMINGS, AND CONTACT DETAILS SAVED IN DATABASE
+          MANAGE GLOBAL PORTAL PARAMETERS, TIMINGS, SYSTEM ACCESS, & FREE CREDITS
         </p>
       </div>
 
@@ -111,7 +119,7 @@ export default function AdminSettingsPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* 1. General & Contact Config */}
+        {/* 1. General & Contact Settings */}
         <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2 border-b border-stone-100 pb-3">
             <Globe className="w-4 h-4 text-[#D4AF37]" />
@@ -129,7 +137,7 @@ export default function AdminSettingsPage() {
                 type="text"
                 required
                 value={formData.siteName}
-                onChange={(e) => setFormData({ ...formData, siteName: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, siteName: e.target.value.toUpperCase() })}
                 className="w-full px-4 py-2.5 bg-[#FBFBF9] border border-stone-200 rounded-xl text-xs font-bold uppercase outline-none focus:border-[#657A68]"
               />
             </div>
@@ -157,14 +165,14 @@ export default function AdminSettingsPage() {
                 type="email"
                 required
                 value={formData.supportEmail}
-                onChange={(e) => setFormData({ ...formData, supportEmail: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, supportEmail: e.target.value.toLowerCase() })}
                 className="w-full px-4 py-2.5 bg-[#FBFBF9] border border-stone-200 rounded-xl text-xs font-bold outline-none focus:border-[#657A68]"
               />
             </div>
           </div>
         </div>
 
-        {/* 2. Credits & Ad Durations */}
+        {/* 2. Free Credits & Expirations */}
         <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2 border-b border-stone-100 pb-3">
             <Coins className="w-4 h-4 text-[#D4AF37]" />
@@ -184,16 +192,19 @@ export default function AdminSettingsPage() {
                 max="50"
                 value={formData.defaultFreeCredits}
                 onChange={(e) =>
-                  setFormData({ ...formData, defaultFreeCredits: Number(e.target.value) })
+                  setFormData({ ...formData, defaultFreeCredits: Math.max(0, Number(e.target.value)) })
                 }
                 className="w-full px-4 py-2.5 bg-[#FBFBF9] border border-stone-200 rounded-xl text-xs font-bold outline-none focus:border-[#657A68]"
               />
+              <span className="text-[9px] font-bold text-stone-400 uppercase block pl-1">
+                Allocated to newly registered users
+              </span>
             </div>
 
             <div className="space-y-1">
               <label className="text-[11px] font-black uppercase text-stone-700 flex items-center gap-1">
                 <Clock className="w-3 h-3 text-stone-400" />
-                <span>REGULAR AD LOCK DURATION (DAYS)</span>
+                <span>REGULAR AD EXPIRY (DAYS)</span>
               </label>
               <input
                 type="number"
@@ -201,7 +212,7 @@ export default function AdminSettingsPage() {
                 max="90"
                 value={formData.adExpiryDays}
                 onChange={(e) =>
-                  setFormData({ ...formData, adExpiryDays: Number(e.target.value) })
+                  setFormData({ ...formData, adExpiryDays: Math.max(1, Number(e.target.value)) })
                 }
                 className="w-full px-4 py-2.5 bg-[#FBFBF9] border border-stone-200 rounded-xl text-xs font-bold outline-none focus:border-[#657A68]"
               />
@@ -210,7 +221,7 @@ export default function AdminSettingsPage() {
             <div className="space-y-1">
               <label className="text-[11px] font-black uppercase text-stone-700 flex items-center gap-1">
                 <Clock className="w-3 h-3 text-stone-400" />
-                <span>PREMIUM HOMEPAGE AD DURATION (DAYS)</span>
+                <span>PREMIUM AD DURATION (DAYS)</span>
               </label>
               <input
                 type="number"
@@ -218,7 +229,7 @@ export default function AdminSettingsPage() {
                 max="60"
                 value={formData.premiumExpiryDays}
                 onChange={(e) =>
-                  setFormData({ ...formData, premiumExpiryDays: Number(e.target.value) })
+                  setFormData({ ...formData, premiumExpiryDays: Math.max(1, Number(e.target.value)) })
                 }
                 className="w-full px-4 py-2.5 bg-[#FBFBF9] border border-stone-200 rounded-xl text-xs font-bold outline-none focus:border-[#657A68]"
               />
@@ -226,12 +237,12 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
-        {/* 3. Platform Security & Controls */}
+        {/* 3. Platform Toggles & Controls */}
         <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2 border-b border-stone-100 pb-3">
             <ShieldAlert className="w-4 h-4 text-[#D4AF37]" />
             <h2 className="text-sm font-black uppercase text-[#171717]">
-              PLATFORM TOGGLES & ACCESS
+              PLATFORM ACCESS & POLICIES
             </h2>
           </div>
 
@@ -243,7 +254,7 @@ export default function AdminSettingsPage() {
                   MAINTENANCE MODE
                 </span>
                 <span className="text-[10px] text-stone-400 uppercase font-bold">
-                  HIDE SITE TEMPORARILY
+                  LOCK PUBLIC BROWSING
                 </span>
               </div>
               <input
@@ -261,7 +272,7 @@ export default function AdminSettingsPage() {
                   ALLOW REGISTRATION
                 </span>
                 <span className="text-[10px] text-stone-400 uppercase font-bold">
-                  NEW USER SIGNUPS
+                  ACCEPT NEW SIGNUPS
                 </span>
               </div>
               <input
@@ -296,7 +307,7 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
-        {/* Save Button */}
+        {/* Submit Button */}
         <button
           type="submit"
           disabled={saving}
@@ -309,7 +320,7 @@ export default function AdminSettingsPage() {
             <Save className="w-4 h-4 text-[#D4AF37]" />
           )}
           <span className="text-white font-black tracking-wider">
-            {saving ? "SAVING TO DATABASE..." : "SAVE SETTINGS TO DATABASE"}
+            {saving ? "SAVING CONFIGURATION..." : "SAVE PLATFORM CONFIGURATION"}
           </span>
         </button>
       </form>

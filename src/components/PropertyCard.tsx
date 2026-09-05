@@ -41,6 +41,29 @@ interface PropertyCardProps {
   property: PropertyItem;
 }
 
+// Helper to extract dynamic area unit from description or smart fallback
+function getPropertyUnit(description?: string, propertyType?: string): string {
+  if (description) {
+    const match = description.match(/\[UNIT:\s*([^\]]+)\]/i);
+    if (match && match[1]) {
+      const u = match[1].trim().toUpperCase();
+      if (u.includes("FEET") || u.includes("FT")) return "SQ. FT";
+      if (u.includes("MARLA")) return "MARLA";
+      if (u.includes("KANAL")) return "KANAL";
+      if (u.includes("METER")) return "SQ. M";
+      if (u.includes("YARD") || u.includes("YDS")) return "SQ. YDS";
+      return u;
+    }
+  }
+
+  // Smart fallback if ad doesn't contain [UNIT] tag
+  const flatTypes = ["FLAT", "APARTMENT", "ROOM", "CONDOS", "PENTHOUSE"];
+  if (propertyType && flatTypes.includes(propertyType.toUpperCase())) {
+    return "SQ. FT";
+  }
+  return "SQ. YDS";
+}
+
 export default function PropertyCard({ property }: PropertyCardProps) {
   const images =
     property.images && property.images.length > 0
@@ -68,6 +91,8 @@ export default function PropertyCard({ property }: PropertyCardProps) {
     `Assalam o Alaikum, I am interested in your listing: "${property.title}" in ${property.phase} listed on GO RENTAL DHA.`
   );
 
+  const displayedUnit = getPropertyUnit(property.description, property.propertyType);
+
   return (
     <div className="w-full bg-white rounded-3xl border border-stone-200/90 shadow-2xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col md:flex-row group">
       
@@ -94,15 +119,14 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           </div>
         )}
 
-        {/* FEATURED BADGE */}
+        {/* FEATURED / BOOST BADGE */}
         {property.isBoosted && !property.isPremium && (
           <div className="absolute top-3 left-3 bg-[#657A68] text-white px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 z-10">
-            
             <span>BOOST PROPERTY</span>
           </div>
         )}
 
-        {/* DHA Phase Tag */}
+        {/* DHA Phase / Tower Tag */}
         <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md text-white px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase z-10">
           {property.phase}
         </div>
@@ -141,7 +165,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         )}
       </div>
 
-      {/* 2. RIGHT: DETAILS & SPECS (TIGHT COMPACT SPACING) */}
+      {/* 2. RIGHT: DETAILS & SPECS */}
       <div className="p-5 sm:p-6 flex-1 flex flex-col justify-center bg-white min-w-0">
         
         {/* Price & Type */}
@@ -171,15 +195,17 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           <span>{property.phase} • DHA KARACHI</span>
         </div>
 
-        {/* 1. AREA BADGE (500 SQ. YDS) */}
+        {/* DYNAMIC AREA BADGE (SQ. FT / MARLA / KANAL / SQ. YDS) */}
         <div className="mb-3">
           <div className="inline-flex items-center gap-1.5 bg-[#FBFBF9] px-3 py-1.5 rounded-xl border border-stone-200/80 text-xs font-bold uppercase text-stone-700">
             <Maximize2 className="w-3.5 h-3.5 text-[#657A68]" />
-            <span>{property.areaSqYards} SQ. YDS</span>
+            <span>
+              {property.areaSqYards} {displayedUnit}
+            </span>
           </div>
         </div>
 
-        {/* 2. BEDS & BATHS (THORA SA NECHE) */}
+        {/* Beds & Baths */}
         <div className="flex items-center gap-2 text-xs font-bold uppercase text-stone-700 mb-0.5">
           <div className="flex items-center gap-1.5 bg-[#FBFBF9] px-3 py-1.5 rounded-xl border border-stone-200/80">
             <Bed className="w-3.5 h-3.5 text-[#657A68]" />
@@ -191,10 +217,10 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           </div>
         </div>
 
-        {/* 3. BOTTOM STRIP: PROPERTY ID + BUTTONS (NO EXTRA GAP) */}
+        {/* Bottom Strip: Property ID & Actions */}
         <div className="pt-3 border-t border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           
-          {/* Property ID Badge */}
+          {/* Property ID */}
           <div className="flex items-center gap-1.5 bg-stone-100 px-3 py-1.5 rounded-xl text-stone-600 font-mono text-[11px] font-bold border border-stone-200/60 self-start sm:self-auto">
             <Hash className="w-3.5 h-3.5 text-stone-400" />
             <span>ID: {property.id.slice(-8).toUpperCase()}</span>
