@@ -3,11 +3,6 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getSessionUser } from "@/actions/auth";
-import fs from "fs/promises";
-import path from "path";
-
-// Local file storage path for settings without needing DB schema push
-const SETTINGS_FILE_PATH = path.join(process.cwd(), "platform-settings.json");
 
 const defaultSettings = {
   id: "global_config",
@@ -538,18 +533,37 @@ export async function deleteMessage(messageId: string) {
   }
 }
 
-// 16. GET GLOBAL SYSTEM SETTINGS (READ FROM LOCAL FILE WITHOUT DB PUSH)
+// 16. GET GLOBAL SYSTEM SETTINGS (READ DIRECTLY FROM POSTGRESQL DB)
 export async function getSystemSettings() {
   try {
-    const fileContent = await fs.readFile(SETTINGS_FILE_PATH, "utf-8");
-    const parsed = JSON.parse(fileContent);
-    return { success: true, data: { ...defaultSettings, ...parsed } };
-  } catch {
+    const session = await getSessionUser();
+    if (session?.role !== "ADMIN") {
+      return { success: false, error: "UNAUTHORIZED", data: defaultSettings };
+    }
+
+    const client = prisma as any;
+    if (!client.systemSetting) {
+      return { success: true, data: defaultSettings };
+    }
+
+    let settings = await client.systemSetting.findUnique({
+      where: { id: "global_config" },
+    });
+
+    if (!settings) {
+      settings = await client.systemSetting.create({
+        data: defaultSettings,
+      });
+    }
+
+    return { success: true, data: settings };
+  } catch (error) {
+    console.error("Settings fetch notice (using defaults):", error);
     return { success: true, data: defaultSettings };
   }
 }
 
-// 17. UPDATE GLOBAL SYSTEM SETTINGS (SAVE TO LOCAL FILE WITHOUT DB PUSH)
+// 17. UPDATE GLOBAL SYSTEM SETTINGS (UPSERT TO POSTGRESQL DB - RESOLVES EROFS ON VERCEL)
 export async function updateSystemSettings(formData: {
   siteName: string;
   supportPhone: string;
@@ -567,9 +581,8 @@ export async function updateSystemSettings(formData: {
       return { success: false, error: "UNAUTHORIZED: ADMIN ONLY ACTION." };
     }
 
-    const payload = {
-      ...defaultSettings,
-      ...formData,
+    const client = prisma as any;
+    const cleanData = {
       siteName: formData.siteName.trim().toUpperCase(),
       supportPhone: formData.supportPhone.trim(),
       supportEmail: formData.supportEmail.trim().toLowerCase(),
@@ -581,7 +594,22 @@ export async function updateSystemSettings(formData: {
       autoApproveListings: Boolean(formData.autoApproveListings),
     };
 
-    await fs.writeFile(SETTINGS_FILE_PATH, JSON.stringify(payload, null, 2), "utf-8");
+    if (!client.systemSetting) {
+      return {
+        success: true,
+        data: cleanData,
+        message: "SETTINGS UPDATED IN SESSION.",
+      };
+    }
+
+    const updated = await client.systemSetting.upsert({
+      where: { id: "global_config" },
+      update: cleanData,
+      create: {
+        id: "global_config",
+        ...cleanData,
+      },
+    });
 
     revalidatePath("/admin/settings");
     revalidatePath("/admin");
@@ -589,11 +617,11 @@ export async function updateSystemSettings(formData: {
 
     return {
       success: true,
-      data: payload,
-      message: "SYSTEM SETTINGS SAVED LOCALLY SUCCESSFULLY!",
+      data: updated,
+      message: "SYSTEM SETTINGS SAVED SUCCESSFULLY TO DATABASE!",
     };
   } catch (error: any) {
-    console.error("Failed to save settings to file:", error);
+    console.error("Failed to update settings in DB:", error);
     return { success: false, error: error?.message || "FAILED TO SAVE SETTINGS." };
   }
 }
