@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -69,9 +69,40 @@ export default function PropertyCard({ property }: PropertyCardProps) {
     property.images && property.images.length > 0
       ? property.images
       : ["/placeholder.jpg"];
+
   const [activeImgIndex, setActiveImgIndex] = useState(0);
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
+
   const numericPrice = Number(property.rentPrice);
 
+  // Touch Swipe Handlers for Mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const diff = touchStartX.current - touchEndX.current;
+
+    // 40px threshold for clean responsive swipe
+    if (diff > 40) {
+      // Next image swipe
+      setActiveImgIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+    } else if (diff < -40) {
+      // Prev image swipe
+      setActiveImgIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+    }
+
+    touchStartX.current = 0;
+    touchEndX.current = 0;
+  };
+
+  // Button Click Handlers for Desktop
   const handlePrev = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -95,25 +126,32 @@ export default function PropertyCard({ property }: PropertyCardProps) {
 
   return (
     <div className="w-full bg-white rounded-3xl border border-stone-200/90 shadow-2xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col md:flex-row group">
-      
-      {/* 1. LEFT: IMAGE SLIDER */}
-      <div className="relative w-full md:w-80 lg:w-96 h-64 md:h-auto shrink-0 overflow-hidden bg-stone-100">
-        <Image
-          src={images[activeImgIndex]}
-          alt={`${property.title} - Image ${activeImgIndex + 1}`}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-500"
-        />
+      {/* 1. LEFT: TOUCH & CLICK IMAGE SLIDER */}
+      <div
+        className="relative w-full md:w-80 lg:w-96 h-64 md:h-auto shrink-0 overflow-hidden bg-stone-100 select-none"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <Link href={`/property/${property.id}`} className="block relative w-full h-full">
+          <Image
+            src={images[activeImgIndex]}
+            alt={`${property.title} - Image ${activeImgIndex + 1}`}
+            fill
+            sizes="(max-width: 768px) 100vw, 384px"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        </Link>
 
         {/* FOR RENT TAG */}
-        <div className="absolute top-3 right-3 bg-[#1A1F1C]/90 backdrop-blur-md text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md z-10">
+        <div className="absolute top-3 right-3 bg-[#1A1F1C]/90 backdrop-blur-md text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md z-10 pointer-events-none">
           <Tag className="w-2.5 h-2.5 text-[#657A68]" />
           <span>FOR RENT</span>
         </div>
 
         {/* FIRE RED PREMIUM PROPERTY BADGE */}
         {property.isPremium && (
-          <div className="absolute top-3 left-3 bg-[#E53935] text-white px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 z-10">
+          <div className="absolute top-3 left-3 bg-[#E53935] text-white px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 z-10 pointer-events-none">
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
             <span>PREMIUM PROPERTY</span>
           </div>
@@ -121,23 +159,23 @@ export default function PropertyCard({ property }: PropertyCardProps) {
 
         {/* FEATURED / BOOST BADGE */}
         {property.isBoosted && !property.isPremium && (
-          <div className="absolute top-3 left-3 bg-[#657A68] text-white px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 z-10">
+          <div className="absolute top-3 left-3 bg-[#657A68] text-white px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 z-10 pointer-events-none">
             <span>BOOST PROPERTY</span>
           </div>
         )}
 
         {/* DHA Phase / Tower Tag */}
-        <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md text-white px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase z-10">
+        <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md text-white px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase z-10 pointer-events-none">
           {property.phase}
         </div>
 
-        {/* Slider Controls */}
+        {/* Slider Controls & Swipe Dots */}
         {images.length > 1 && (
           <>
             <button
               type="button"
               onClick={handlePrev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20"
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20 shadow-md"
               title="Previous Photo"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -145,18 +183,19 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             <button
               type="button"
               onClick={handleNext}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20 shadow-md"
               title="Next Photo"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
 
-            <div className="absolute bottom-2.5 right-3 flex items-center gap-1 z-10">
+            {/* Dots Indicator */}
+            <div className="absolute bottom-2.5 right-3 flex items-center gap-1 z-10 bg-black/40 backdrop-blur-xs px-2 py-0.5 rounded-full pointer-events-none">
               {images.map((_, i) => (
                 <span
                   key={i}
-                  className={`w-1.5 h-1.5 rounded-full transition-all ${
-                    activeImgIndex === i ? "bg-white w-3" : "bg-white/50"
+                  className={`rounded-full transition-all duration-300 ${
+                    activeImgIndex === i ? "bg-white w-3 h-1.5" : "bg-white/50 w-1.5 h-1.5"
                   }`}
                 />
               ))}
@@ -167,7 +206,6 @@ export default function PropertyCard({ property }: PropertyCardProps) {
 
       {/* 2. RIGHT: DETAILS & SPECS */}
       <div className="p-5 sm:p-6 flex-1 flex flex-col justify-center bg-white min-w-0">
-        
         {/* Price & Type */}
         <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
           <div className="flex items-baseline gap-1.5">
@@ -195,7 +233,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           <span>{property.phase} • DHA KARACHI</span>
         </div>
 
-        {/* DYNAMIC AREA BADGE (SQ. FT / MARLA / KANAL / SQ. YDS) */}
+        {/* Dynamic Area Badge */}
         <div className="mb-3">
           <div className="inline-flex items-center gap-1.5 bg-[#FBFBF9] px-3 py-1.5 rounded-xl border border-stone-200/80 text-xs font-bold uppercase text-stone-700">
             <Maximize2 className="w-3.5 h-3.5 text-[#657A68]" />
@@ -219,7 +257,6 @@ export default function PropertyCard({ property }: PropertyCardProps) {
 
         {/* Bottom Strip: Property ID & Actions */}
         <div className="pt-3 border-t border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          
           {/* Property ID */}
           <div className="flex items-center gap-1.5 bg-stone-100 px-3 py-1.5 rounded-xl text-stone-600 font-mono text-[11px] font-bold border border-stone-200/60 self-start sm:self-auto">
             <Hash className="w-3.5 h-3.5 text-stone-400" />
@@ -248,11 +285,8 @@ export default function PropertyCard({ property }: PropertyCardProps) {
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 }

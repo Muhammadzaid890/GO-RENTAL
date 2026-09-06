@@ -15,7 +15,7 @@ export interface PropertyFilterParams {
   page?: string;
 }
 
-// Helper: Smart Type Mapping (Apartment/Flat ko harmonize karne ke liye)
+// Helper: Smart Type Mapping (Bungalow, Portion, Apartment, Commercial harmonization)
 function getTargetPropertyTypes(rawType: string): string[] | null {
   const upper = rawType.trim().toUpperCase();
 
@@ -35,45 +35,66 @@ function getTargetPropertyTypes(rawType: string): string[] | null {
     return ["HOUSE", "BUNGALOW", "FARM HOUSE"];
   }
 
+  if (upper.includes("COMMERCIAL") || upper.includes("OFFICE") || upper.includes("SHOP")) {
+    return ["COMMERCIAL", "OFFICE", "SHOP", "BUILDING", "SHOWROOM"];
+  }
+
   return [upper];
 }
 
-// 1. GET FILTERED PROPERTIES WITH PAGINATION (SMART APARTMENT & FLAT MATCHING)
+// Helper: Phase variations generator (Roman numbers & standard names)
+function getPhaseVariations(rawPhase: string): string[] {
+  const p = rawPhase.trim().toUpperCase();
+  const variations = [p];
+
+  if (p.includes("8")) variations.push("PHASE 8", "PHASE VIII", "DHA 8", "DHA PHASE 8");
+  if (p.includes("6")) variations.push("PHASE 6", "PHASE VI", "DHA 6", "DHA PHASE 6");
+  if (p.includes("7")) variations.push("PHASE 7", "PHASE VII", "DHA 7", "DHA PHASE 7");
+  if (p.includes("5")) variations.push("PHASE 5", "PHASE V", "DHA 5", "DHA PHASE 5");
+  if (p.includes("4")) variations.push("PHASE 4", "PHASE IV", "DHA 4", "DHA PHASE 4");
+  if (p.includes("2")) variations.push("PHASE 2", "PHASE II", "DHA 2", "DHA PHASE 2", "PHASE 2 EXT", "EXTENSION");
+
+  return Array.from(new Set(variations));
+}
+
+// 1. GET FILTERED PROPERTIES WITH SMART MATCHING & PRIORITY RANKING
 export async function getFilteredProperties(params: PropertyFilterParams) {
   try {
     const page = Math.max(1, Number(params.page) || 1);
     const pageSize = 20;
 
-    const whereClause: any = {
-      status: "APPROVED",
-    };
+    const andConditions: any[] = [{ status: "APPROVED" }];
 
-    // 1. Phase Filter
+    // 1. Phase Filter with Variations
     if (params.phase && params.phase !== "ALL PHASES" && params.phase !== "ALL") {
-      whereClause.phase = {
-        contains: params.phase,
-        mode: "insensitive",
-      };
+      const phaseList = getPhaseVariations(params.phase);
+      andConditions.push({
+        OR: phaseList.map((ph) => ({
+          phase: { contains: ph, mode: "insensitive" },
+        })),
+      });
     }
 
-    // 2. Property Type Filter (Apartment & Flat Synchronization)
+    // 2. Property Type Filter
     if (params.type) {
       const mappedTypes = getTargetPropertyTypes(params.type);
       if (mappedTypes && mappedTypes.length > 0) {
-        whereClause.OR = mappedTypes.map((t) => ({
-          propertyType: {
-            contains: t,
-            mode: "insensitive",
-          },
-        }));
+        andConditions.push({
+          OR: mappedTypes.map((t) => ({
+            propertyType: { contains: t, mode: "insensitive" },
+          })),
+        });
       }
     }
 
-    // 3. Search Bar Keyword Filter
+    // 3. Keyword / Location Search Filter
     if (params.search && params.search.trim()) {
       const q = params.search.trim();
       const qUpper = q.toUpperCase();
       const isApartmentSearch = qUpper.includes("APARTMENT") || qUpper.includes("FLAT");
+      const isPortionSearch = qUpper.includes("PORTION");
+      const isHouseSearch = qUpper.includes("BUNGALOW") || qUpper.includes("HOUSE");
+      const isCommercialSearch = qUpper.includes("COMMERCIAL") || qUpper.includes("OFFICE") || qUpper.includes("SHOP");
 
       const textSearchConditions: any[] = [
         { title: { contains: q, mode: "insensitive" } },
@@ -81,12 +102,26 @@ export async function getFilteredProperties(params: PropertyFilterParams) {
         { phase: { contains: q, mode: "insensitive" } },
       ];
 
-      // Agar user search input mein bhi apartment ya flat likhe to propertyType se match kare
       if (isApartmentSearch) {
         textSearchConditions.push(
           { propertyType: { contains: "APARTMENT", mode: "insensitive" } },
           { propertyType: { contains: "FLAT", mode: "insensitive" } },
           { propertyType: { contains: "PENTHOUSE", mode: "insensitive" } }
+        );
+      } else if (isPortionSearch) {
+        textSearchConditions.push(
+          { propertyType: { contains: "PORTION", mode: "insensitive" } }
+        );
+      } else if (isHouseSearch) {
+        textSearchConditions.push(
+          { propertyType: { contains: "HOUSE", mode: "insensitive" } },
+          { propertyType: { contains: "BUNGALOW", mode: "insensitive" } }
+        );
+      } else if (isCommercialSearch) {
+        textSearchConditions.push(
+          { propertyType: { contains: "COMMERCIAL", mode: "insensitive" } },
+          { propertyType: { contains: "OFFICE", mode: "insensitive" } },
+          { propertyType: { contains: "SHOP", mode: "insensitive" } }
         );
       } else {
         textSearchConditions.push({
@@ -94,42 +129,30 @@ export async function getFilteredProperties(params: PropertyFilterParams) {
         });
       }
 
-      // Merge with existing OR conditions if type was already filtered
-      if (whereClause.OR) {
-        whereClause.AND = [
-          { OR: whereClause.OR },
-          { OR: textSearchConditions },
-        ];
-        delete whereClause.OR;
-      } else {
-        whereClause.OR = textSearchConditions;
-      }
+      andConditions.push({ OR: textSearchConditions });
     }
 
     // 4. Price Filters
     if (params.minPrice || params.maxPrice) {
-      whereClause.rentPrice = {};
-      if (params.minPrice) {
-        whereClause.rentPrice.gte = Number(params.minPrice);
-      }
-      if (params.maxPrice) {
-        whereClause.rentPrice.lte = Number(params.maxPrice);
-      }
+      const priceCondition: any = {};
+      if (params.minPrice) priceCondition.gte = Number(params.minPrice);
+      if (params.maxPrice) priceCondition.lte = Number(params.maxPrice);
+      andConditions.push({ rentPrice: priceCondition });
     }
 
     // 5. Area Filters
     if (params.minArea || params.maxArea) {
-      whereClause.areaSqYards = {};
-      if (params.minArea) {
-        whereClause.areaSqYards.gte = Number(params.minArea);
-      }
-      if (params.maxArea) {
-        whereClause.areaSqYards.lte = Number(params.maxArea);
-      }
+      const areaCondition: any = {};
+      if (params.minArea) areaCondition.gte = Number(params.minArea);
+      if (params.maxArea) areaCondition.lte = Number(params.maxArea);
+      andConditions.push({ areaSqYards: areaCondition });
     }
+
+    const whereClause: any = { AND: andConditions };
 
     const totalCount = await prisma.property.count({ where: whereClause });
 
+    // PRIORITY SORTING: PREMIUM FIRST -> BOOSTED SECOND -> NEWEST THIRD
     const properties = await prisma.property.findMany({
       where: whereClause,
       take: pageSize,
@@ -167,7 +190,7 @@ export async function getFilteredProperties(params: PropertyFilterParams) {
   }
 }
 
-// 2. GET ACTIVE PREMIUM PROPERTIES (MAX 5 ADS FOR HOMEPAGE)
+// 2. GET ACTIVE PREMIUM PROPERTIES (NO LIMIT - FETCH ALL ADMIN SET PREMIUM ADS)
 export async function getPremiumProperties() {
   try {
     const now = new Date();
@@ -179,7 +202,6 @@ export async function getPremiumProperties() {
           gt: now,
         },
       },
-      take: 5,
       orderBy: {
         createdAt: "desc",
       },
@@ -201,7 +223,7 @@ export async function getPremiumProperties() {
   }
 }
 
-// 3. CREATE RENTAL AD
+// 3. CREATE RENTAL AD (UNLIMITED PREMIUM ADS FOR ADMIN)
 export async function createRentalAd(formData: {
   title: string;
   description: string;
@@ -255,21 +277,6 @@ export async function createRentalAd(formData: {
     let premiumExpiresAt: Date | null = null;
 
     if (requestedPremium) {
-      const activeCount = await prisma.property.count({
-        where: {
-          status: "APPROVED",
-          isPremium: true,
-          premiumExpiresAt: { gt: now },
-        },
-      });
-
-      if (activeCount >= 5) {
-        return {
-          success: false,
-          error: "PREMIUM SLOTS FULL: MAXIMUM 5 ACTIVE PREMIUM ADS ALLOWED AT A TIME.",
-        };
-      }
-
       premiumExpiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     }
 
@@ -443,5 +450,64 @@ export async function boostRentalAd(propertyId: string, days: number | string = 
   } catch (error: any) {
     console.error("Boost Rental Ad Error:", error);
     return { success: false, error: error.message || "FAILED TO BOOST AD." };
+  }
+}
+
+// 6. UPDATE / EDIT RENTAL AD (STRICTLY TITLE, DESCRIPTION, PRICE & AMENITIES ONLY)
+export async function updateRentalAd(
+  propertyId: string,
+  data: {
+    title: string;
+    description: string;
+    rentPrice: number;
+    amenities?: string;
+  }
+) {
+  try {
+    const session = await getSessionUser();
+    if (!session) {
+      return { success: false, error: "PLEASE LOGIN FIRST." };
+    }
+
+    const existingProperty = await prisma.property.findUnique({
+      where: { id: propertyId },
+    });
+
+    if (!existingProperty) {
+      return { success: false, error: "PROPERTY NOT FOUND." };
+    }
+
+    if (existingProperty.userId !== session.id && session.role !== "ADMIN") {
+      return { success: false, error: "UNAUTHORIZED: YOU CANNOT EDIT THIS AD." };
+    }
+
+    if (!data.title?.trim() || !data.description?.trim() || !data.rentPrice) {
+      return { success: false, error: "TITLE, DESCRIPTION AND PRICE ARE REQUIRED." };
+    }
+
+    const updateData: any = {
+      title: data.title.trim().toUpperCase(),
+      description: data.description.trim(),
+      rentPrice: Number(data.rentPrice),
+    };
+
+    if ("amenities" in existingProperty && data.amenities !== undefined) {
+      updateData.amenities = data.amenities;
+    }
+
+    await prisma.property.update({
+      where: { id: propertyId },
+      data: updateData,
+    });
+
+    revalidatePath("/dashboard/my-ads");
+    revalidatePath("/properties");
+    revalidatePath(`/property/${propertyId}`);
+    revalidatePath("/");
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to update property ad:", error);
+    return { success: false, error: "FAILED TO UPDATE PROPERTY AD." };
   }
 }

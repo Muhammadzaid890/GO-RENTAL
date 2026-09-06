@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { getAdminOwnListings, adminDeleteProperty, togglePropertyPremium } from "@/actions/admin";
+import EditAdModal from "@/components/dashboard/EditAdModal";
 import {
   Building2,
   Plus,
@@ -16,6 +17,7 @@ import {
   CheckCircle2,
   Calendar,
   Layers,
+  Edit3,
 } from "lucide-react";
 
 export default function AdminMyListingsPage() {
@@ -24,6 +26,9 @@ export default function AdminMyListingsPage() {
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Edit Modal State
+  const [editingProperty, setEditingProperty] = useState<any | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -78,7 +83,6 @@ export default function AdminMyListingsPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      
       {/* 1. Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-5">
         <div>
@@ -151,7 +155,7 @@ export default function AdminMyListingsPage() {
           {listings.map((property) => {
             const isItemLoading = actionLoadingId === property.id;
             const images = property.images && property.images.length > 0 ? property.images : ["/placeholder.jpg"];
-            
+
             // Calculate remaining active days (14 days total)
             const createdDate = new Date(property.createdAt);
             const expiryDate = property.expiresAt ? new Date(property.expiresAt) : new Date(createdDate.getTime() + 14 * 24 * 60 * 60 * 1000);
@@ -173,6 +177,7 @@ export default function AdminMyListingsPage() {
                       src={images[0]}
                       alt={property.title}
                       fill
+                      sizes="96px"
                       className="object-cover"
                     />
                     {property.isPremium && (
@@ -216,7 +221,6 @@ export default function AdminMyListingsPage() {
 
                 {/* Right: Quick Controls */}
                 <div className="flex items-center gap-2 self-end md:self-center shrink-0 flex-wrap">
-                  
                   {/* Public Link */}
                   <Link
                     href={`/property/${property.id}`}
@@ -226,6 +230,16 @@ export default function AdminMyListingsPage() {
                   >
                     <ExternalLink className="w-4 h-4" />
                   </Link>
+
+                  {/* EDIT BUTTON */}
+                  <button
+                    type="button"
+                    onClick={() => setEditingProperty(property)}
+                    className="flex items-center gap-1 px-3.5 py-2.5 rounded-xl bg-stone-100 hover:bg-[#1A1F1C] text-stone-700 hover:text-white border border-stone-200 hover:border-[#1A1F1C] text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-2xs"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-[#657A68]" />
+                    <span>EDIT</span>
+                  </button>
 
                   {/* Toggle Premium */}
                   <button
@@ -252,15 +266,31 @@ export default function AdminMyListingsPage() {
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-
                 </div>
-
               </div>
             );
           })}
         </div>
       )}
 
+      {/* EDIT MODAL INTEGRATION */}
+      {editingProperty && (
+        <EditAdModal
+          property={{
+            id: editingProperty.id,
+            title: editingProperty.title,
+            description: editingProperty.description || "",
+            rentPrice: Number(editingProperty.rentPrice),
+            amenities: editingProperty.amenities || "",
+          }}
+          isOpen={Boolean(editingProperty)}
+          onClose={() => setEditingProperty(null)}
+          onSuccess={() => {
+            setEditingProperty(null);
+            loadData();
+          }}
+        />
+      )}
     </div>
   );
 }

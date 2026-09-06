@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { deleteAgentProperty, boostRentalAd } from "@/actions/property";
+import EditAdModal from "@/components/dashboard/EditAdModal";
 import {
   MapPin,
   Clock,
@@ -15,16 +16,19 @@ import {
   Zap,
   X,
   Loader2,
+  Edit3,
 } from "lucide-react";
 
 interface Property {
   id: string;
   title: string;
+  description?: string;
   rentPrice: string | number;
   phase: string;
   propertyType: string;
   images: string[];
   status: string;
+  amenities?: string | string[] | null;
   isPremium?: boolean;
   isBoosted: boolean;
   boostExpiresAt?: string | null;
@@ -38,6 +42,9 @@ export default function MyAdsPage() {
   const [boostingId, setBoostingId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalDaysLeft, setModalDaysLeft] = useState(0);
+
+  // Edit Modal State
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
 
   const fetchAds = async () => {
     try {
@@ -226,8 +233,8 @@ export default function MyAdsPage() {
                   </div>
                 </div>
 
-                {/* Card Actions: View Ad + Boost Ad + Delete */}
-                <div className="flex items-center justify-between pt-4 border-t border-stone-100 gap-2">
+                {/* Card Actions: View Ad + Edit + Boost Ad + Delete */}
+                <div className="flex items-center justify-between pt-4 border-t border-stone-100 gap-2 flex-wrap">
                   <Link
                     href={`/property/${item.id}`}
                     className="text-stone-500 hover:text-[#171717] text-xs font-bold uppercase flex items-center gap-1.5 transition-colors py-1"
@@ -236,7 +243,17 @@ export default function MyAdsPage() {
                     <span className="font-black">VIEW AD</span>
                   </Link>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* EDIT BUTTON */}
+                    <button
+                      type="button"
+                      onClick={() => setEditingProperty(item)}
+                      className="flex items-center gap-1.5 text-xs font-black uppercase px-3 py-2 rounded-xl bg-stone-100 hover:bg-[#171717] text-stone-700 hover:text-white border border-stone-200 hover:border-[#171717] transition-all cursor-pointer shadow-2xs"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-[#657A68]" />
+                      <span>EDIT</span>
+                    </button>
+
                     {/* BOOST BUTTON */}
                     {isBoostActive ? (
                       <span className="text-[11px] font-black text-[#657A68] uppercase px-3.5 py-2 bg-[#657A68]/10 rounded-xl border border-[#657A68]/20 flex items-center gap-1.5">
@@ -249,14 +266,14 @@ export default function MyAdsPage() {
                         disabled={boostingId === item.id}
                         onClick={() => handleBoostClick(item.id)}
                         style={{ backgroundColor: "#171717", color: "#ffffff" }}
-                        className="flex items-center gap-1.5 text-xs font-black uppercase px-4 py-2 rounded-xl border border-[#D4AF37]/40 hover:border-[#D4AF37] hover:bg-stone-900 transition-all cursor-pointer disabled:opacity-50 shadow-sm"
+                        className="flex items-center gap-1.5 text-xs font-black uppercase px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 hover:border-[#D4AF37] hover:bg-stone-900 transition-all cursor-pointer disabled:opacity-50 shadow-sm"
                       >
                         {boostingId === item.id ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin text-[#D4AF37]" />
                         ) : (
                           <Zap className="w-3.5 h-3.5 text-[#D4AF37]" />
                         )}
-                        <span className="text-white font-black tracking-wider">BOOST AD</span>
+                        <span className="text-white font-black tracking-wider">BOOST</span>
                       </button>
                     )}
 
@@ -264,7 +281,7 @@ export default function MyAdsPage() {
                     <button
                       type="button"
                       onClick={() => handleDeleteClick(item)}
-                      className={`flex items-center gap-1.5 text-xs font-black uppercase px-3.5 py-2 rounded-xl border transition-all cursor-pointer ${
+                      className={`flex items-center gap-1.5 text-xs font-black uppercase px-3 py-2 rounded-xl border transition-all cursor-pointer ${
                         isLocked
                           ? "bg-stone-100 border-stone-200 text-stone-400 hover:bg-stone-200/70 hover:text-stone-600"
                           : "bg-red-50 border-red-200 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 shadow-2xs"
@@ -283,6 +300,25 @@ export default function MyAdsPage() {
             );
           })}
         </div>
+      )}
+
+      {/* EDIT MODAL POPUP */}
+      {editingProperty && (
+        <EditAdModal
+          property={{
+            id: editingProperty.id,
+            title: editingProperty.title,
+            description: editingProperty.description || "",
+            rentPrice: Number(editingProperty.rentPrice),
+            amenities: editingProperty.amenities || "",
+          }}
+          isOpen={Boolean(editingProperty)}
+          onClose={() => setEditingProperty(null)}
+          onSuccess={() => {
+            setEditingProperty(null);
+            fetchAds();
+          }}
+        />
       )}
 
       {/* 14-Day Lock Warning Modal */}
