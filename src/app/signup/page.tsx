@@ -45,7 +45,7 @@ export default function SignupPage() {
         <div className="flex flex-col items-center justify-center text-center space-y-3">
           <Link href="/" className="inline-block transition-transform hover:scale-105">
             <img
-              src="/signup-logo.png"
+              src="/SIGNUP-LOGO.png"
               alt="GO RENTAL DHA"
               className="h-16 w-auto object-contain bg-transparent border-0 outline-none shadow-none"
             />
@@ -124,45 +124,7 @@ export default function SignupPage() {
             </div>
           </div>
 
-          {/* Role Selection */}
-          <div className="space-y-1">
-            <label className="text-[11px] font-black uppercase text-stone-700 tracking-wider">
-              ACCOUNT TYPE
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, role: "AGENT" })}
-                style={{
-                  backgroundColor: formData.role === "AGENT" ? "#171717" : "#FBFBF9",
-                  color: formData.role === "AGENT" ? "#ffffff" : "#171717",
-                }}
-                className={`py-2.5 rounded-xl text-xs font-black uppercase border transition-all cursor-pointer ${
-                  formData.role === "AGENT"
-                    ? "border-[#D4AF37]/50 shadow-sm"
-                    : "border-stone-200 text-stone-500"
-                }`}
-              >
-                REAL ESTATE AGENT
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, role: "USER" })}
-                style={{
-                  backgroundColor: formData.role === "USER" ? "#171717" : "#FBFBF9",
-                  color: formData.role === "USER" ? "#ffffff" : "#171717",
-                }}
-                className={`py-2.5 rounded-xl text-xs font-black uppercase border transition-all cursor-pointer ${
-                  formData.role === "USER"
-                    ? "border-[#D4AF37]/50 shadow-sm"
-                    : "border-stone-200 text-stone-500"
-                }`}
-              >
-                 CLIENT
-              </button>
-            </div>
-          </div>
-
+  
           {/* Submit Button */}
           <button
             type="submit"
