@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-// 1. REGISTER USER (Dynamic Free Credits from Admin Settings)
+// 1. REGISTER USER (Default: CLIENT with dynamic free credits)
 export async function registerUser(formData: {
   name: string;
   email: string;
@@ -20,7 +20,6 @@ export async function registerUser(formData: {
       where: { id: "global_config" },
     });
 
-    // Agar admin ne new registrations band ki hui hain
     if (settings && settings.allowRegistration === false) {
       return {
         success: false,
@@ -37,12 +36,23 @@ export async function registerUser(formData: {
       return { success: false, error: "USER ALREADY EXISTS WITH THIS EMAIL." };
     }
 
-    const assignedRole = (formData.role as any) || "AGENT";
+    // Role mapping: Prisma enum strictly CLIENT, AGENT, ADMIN
+    let assignedRole: "CLIENT" | "AGENT" | "ADMIN" = "CLIENT";
+    const requestedRole = (formData.role || "").toUpperCase();
 
-    // Dynamic Free Ad Credits: Admin setting se uthayega, warna default 3
+    if (requestedRole === "AGENT") {
+      assignedRole = "AGENT";
+    } else if (requestedRole === "ADMIN") {
+      assignedRole = "ADMIN";
+    } else {
+      // "USER" ya default form submission hamesha CLIENT banega
+      assignedRole = "CLIENT";
+    }
+
+    // Free Ad Credits: Admin setting se, warna default 3
     const freeCredits = settings?.defaultFreeCredits ?? 3;
 
-    // Create user and attach wallet with initial credits
+    // Create user with CLIENT role
     const newUser = await prisma.user.create({
       data: {
         name: formData.name.trim().toUpperCase(),
@@ -61,7 +71,7 @@ export async function registerUser(formData: {
       },
     });
 
-    // Set auth cookie for instant login
+    // Set auth session cookie
     const cookieStore = await cookies();
     cookieStore.set(
       "auth_session",
@@ -94,7 +104,7 @@ export async function registerUser(formData: {
   }
 }
 
-// 2. Client Signup Fallback
+// 2. Client Signup Helper
 export async function signupClient(formData: {
   name: string;
   email: string;
@@ -103,7 +113,7 @@ export async function signupClient(formData: {
   return registerUser({ ...formData, role: "CLIENT" });
 }
 
-// 3. Login (Checks by Email)
+// 3. Login (Email Check)
 export async function loginUser(email: string) {
   try {
     const user = await prisma.user.findUnique({
@@ -147,7 +157,7 @@ export async function loginUser(email: string) {
   }
 }
 
-// 4. Logout Function (Clears Cookie)
+// 4. Logout (Clear Cookie)
 export async function logoutUser() {
   try {
     const cookieStore = await cookies();
@@ -166,7 +176,7 @@ export async function logoutUser() {
   }
 }
 
-// 5. Logout Action with Direct Redirect
+// 5. Logout Action (With Redirect)
 export async function logoutAction() {
   const cookieStore = await cookies();
   cookieStore.set("auth_session", "", {
@@ -191,9 +201,29 @@ export async function getSessionUser() {
       id: string;
       email: string;
       name: string;
-      role: "ADMIN" | "AGENT" | "CLIENT" | "USER";
+      role: "ADMIN" | "AGENT" | "CLIENT";
     };
   } catch {
     return null;
+  }
+}
+
+// 7. Admin Power: Promote Client to Agent
+export async function upgradeClientToAgent(targetUserId: string) {
+  try {
+    const session = await getSessionUser();
+    if (!session || session.role !== "ADMIN") {
+      return { success: false, error: "UNAUTHORIZED: ONLY ADMINS CAN PROMOTE TO AGENT." };
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: targetUserId },
+      data: { role: "AGENT" },
+    });
+
+    revalidatePath("/admin/users");
+    return { success: true, message: `${updatedUser.name} IS NOW AN AGENT!` };
+  } catch (error: any) {
+    return { success: false, error: error?.message || "FAILED TO UPGRADE ROLE." };
   }
 }
