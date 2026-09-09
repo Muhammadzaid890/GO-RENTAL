@@ -103,7 +103,7 @@ export default function Navbar() {
             <img
               src="/logo.png"
               alt="GO RENTAL DHA"
-              className="h-35 w-auto max-w-[600px] object-contain"
+              className="h-30 w-auto max-w-[600px] object-contain"
             />
           </Link>
 
