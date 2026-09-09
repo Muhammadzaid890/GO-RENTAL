@@ -15,7 +15,7 @@ export default function SignupPage() {
     name: "",
     email: "",
     phone: "",
-    role: "AGENT",
+    role: "USER", // Default har koi Client (USER) banega
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,7 +24,8 @@ export default function SignupPage() {
     setError("");
 
     try {
-      const res = await registerUser(formData);
+      // Form data hamesha role: "USER" ke sath submit hoga
+      const res = await registerUser({ ...formData, role: "USER" });
       if (res.success) {
         router.push("/dashboard/my-ads");
       } else {
@@ -41,7 +42,7 @@ export default function SignupPage() {
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-xl space-y-6">
         
-        {/* LOGO CONTAINER - Transparent with No Background */}
+        {/* LOGO CONTAINER */}
         <div className="flex flex-col items-center justify-center text-center space-y-3">
           <Link href="/" className="inline-block transition-transform hover:scale-105">
             <img
@@ -52,10 +53,10 @@ export default function SignupPage() {
           </Link>
           <div>
             <h1 className="text-xl font-black uppercase text-[#171717] tracking-tight">
-              CREATE AGENT ACCOUNT
+              CREATE YOUR ACCOUNT
             </h1>
             <p className="text-xs text-stone-500 uppercase tracking-wide mt-1">
-              JOIN GO RENTAL DHA TO POST AND MANAGE PROPERTIES
+              JOIN GO RENTAL DHA TO EXPLORE AND MANAGE PROPERTIES
             </p>
           </div>
         </div>
@@ -73,7 +74,7 @@ export default function SignupPage() {
           {/* Full Name */}
           <div className="space-y-1">
             <label className="text-[11px] font-black uppercase text-stone-700 tracking-wider">
-              FULL NAME / AGENCY NAME
+              FULL NAME
             </label>
             <div className="relative">
               <input
@@ -97,7 +98,7 @@ export default function SignupPage() {
               <input
                 type="email"
                 required
-                placeholder="AGENT@EXAMPLE.COM"
+                placeholder="USER@EXAMPLE.COM"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full pl-10 pr-4 py-2.5 bg-[#FBFBF9] border border-stone-200 rounded-xl text-xs font-bold outline-none focus:border-[#657A68]"
@@ -124,7 +125,6 @@ export default function SignupPage() {
             </div>
           </div>
 
-  
           {/* Submit Button */}
           <button
             type="submit"
