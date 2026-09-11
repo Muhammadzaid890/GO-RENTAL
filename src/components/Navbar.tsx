@@ -20,7 +20,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { logoutUser } from "@/actions/auth";
-import { usePreferences, AreaUnit, Currency, Language } from "@/context/PreferencesContext";
+import { usePreferences, AreaUnit, Currency } from "@/context/PreferencesContext";
 
 const phases = [
   "PHASE 1", "PHASE 2", "PHASE 2 EXT", "PHASE 4", "PHASE 5",
@@ -74,13 +74,12 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 100% Reliable Client-Side Logout Handler
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
       setAuthOpen(false);
       await logoutUser();
-      
+
       if (typeof window !== "undefined") {
         localStorage.clear();
         sessionStorage.clear();
@@ -94,44 +93,32 @@ export default function Navbar() {
 
   return (
     <>
-      {/* 1. GLASSMORPHISM HEADER */}
-      <header className="sticky top-0 z-40 w-full bg-[#FBFBF9]/80 backdrop-blur-xl border-b border-stone-200/60 shadow-[0_4px_30px_rgba(0,0,0,0.03)] supports-[backdrop-filter]:bg-[#FBFBF9]/75 transition-all">
+      {/* DESKTOP HEADER ONLY: Mobile par bilkul render nahi hoga */}
+      <header className="hidden md:block sticky top-0 z-40 w-full bg-[#FBFBF9]/80 backdrop-blur-xl border-b border-stone-200/60 shadow-[0_4px_30px_rgba(0,0,0,0.03)] supports-[backdrop-filter]:bg-[#FBFBF9]/75 transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between gap-4">
           
-          {/* LOGO */}
           <Link href="/" className="flex items-center shrink-0">
             <img
-              src="/logo.png"
+              src="/SIGNUP-LOGO.png"
               alt="GO RENTAL DHA"
-              className="h-30 w-auto max-w-[600px] object-contain"
+              className="h-26 w-auto object-contain bg-transparent border-0 outline-none"
             />
           </Link>
 
-          {/* NAVIGATION LINKS */}
-          <nav className="hidden md:flex items-center gap-1 text-xs font-black uppercase tracking-wider text-stone-900">
-            <Link
-              href="/"
-              className="px-3.5 py-2 rounded-xl hover:bg-stone-200/40 transition-colors"
-            >
+          <nav className="flex items-center gap-1 text-xs font-black uppercase tracking-wider text-stone-900">
+            <Link href="/" className="px-3.5 py-2 rounded-xl hover:bg-stone-200/40 transition-colors">
               {t("HOME")}
             </Link>
 
-            <Link
-              href="/properties"
-              className="px-3.5 py-2 rounded-xl hover:bg-stone-200/40 transition-colors"
-            >
+            <Link href="/properties" className="px-3.5 py-2 rounded-xl hover:bg-stone-200/40 transition-colors">
               {t("PROPERTIES")}
             </Link>
 
-            <Link
-              href="/maps"
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl hover:bg-stone-200/40 text-stone-700 hover:text-stone-900 transition-colors"
-            >
+            <Link href="/maps" className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl hover:bg-stone-200/40 text-stone-700 hover:text-stone-900 transition-colors">
               <Map className="w-4 h-4 text-emerald-600" />
               <span>{t("MAPS")}</span>
             </Link>
 
-            {/* AREAS DROPDOWN */}
             <div className="relative" ref={areasDropdownRef}>
               <button
                 type="button"
@@ -173,16 +160,12 @@ export default function Navbar() {
               )}
             </div>
 
-            <Link
-              href="/agents"
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl hover:bg-stone-200/40 text-stone-700 hover:text-stone-900 transition-colors"
-            >
+            <Link href="/agents" className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl hover:bg-stone-200/40 text-stone-700 hover:text-stone-900 transition-colors">
               <Users className="w-4 h-4 text-emerald-600" />
               <span>{t("AGENTS")}</span>
             </Link>
           </nav>
 
-          {/* RIGHT CONTROLS */}
           <div className="flex items-center gap-2 sm:gap-2.5">
             <Link
               href="/post-ad"
@@ -193,7 +176,6 @@ export default function Navbar() {
               <span className="hidden sm:inline">{t("POST_PROPERTY")}</span>
             </Link>
 
-            {/* GEAR ICON */}
             <button
               type="button"
               onClick={() => setSettingsOpen(true)}
@@ -203,7 +185,6 @@ export default function Navbar() {
               <Settings className="w-4 h-4" />
             </button>
 
-            {/* USER ICON */}
             <div className="relative" ref={authDropdownRef}>
               <button
                 type="button"
@@ -236,7 +217,6 @@ export default function Navbar() {
                         <span>DASHBOARD</span>
                       </Link>
 
-                      {/* Client-Handled Direct Logout */}
                       <button
                         type="button"
                         disabled={isLoggingOut}
@@ -259,7 +239,7 @@ export default function Navbar() {
                       </Link>
 
                       <Link
-                        href="/register"
+                        href="/signup"
                         onClick={() => setAuthOpen(false)}
                         className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-emerald-700 hover:bg-emerald-50/80 transition-all"
                       >
@@ -275,7 +255,7 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* 2. PREFERENCES MODAL */}
+      {/* PREFERENCES MODAL */}
       {settingsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-4">
           <div className="bg-[#FBFBF9]/95 backdrop-blur-2xl rounded-3xl max-w-md w-full p-6 sm:p-7 space-y-6 shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-stone-200/80 relative animate-in fade-in zoom-in duration-150">
@@ -298,7 +278,6 @@ export default function Navbar() {
             </div>
 
             <div className="space-y-4 text-xs font-bold uppercase">
-              {/* Language */}
               <div className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-2xl border border-stone-200/60 shadow-2xs">
                 <div className="flex items-center gap-2 text-stone-700">
                   <Globe className="w-4 h-4 text-emerald-600" />
@@ -326,7 +305,6 @@ export default function Navbar() {
                 </div>
               </div>
 
-              {/* Area Unit */}
               <div className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-2xl border border-stone-200/60 shadow-2xs">
                 <div className="flex items-center gap-2 text-stone-700">
                   <Maximize2 className="w-4 h-4 text-stone-500" />
@@ -348,7 +326,6 @@ export default function Navbar() {
                 </div>
               </div>
 
-              {/* Currency */}
               <div className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-2xl border border-stone-200/60 shadow-2xs">
                 <div className="flex items-center gap-2 text-stone-700">
                   <Coins className="w-4 h-4 text-amber-600" />
