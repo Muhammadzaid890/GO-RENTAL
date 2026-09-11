@@ -17,6 +17,8 @@ import {
   X,
   Loader2,
   Edit3,
+  Eye,
+  Users,
 } from "lucide-react";
 
 interface Property {
@@ -34,6 +36,8 @@ interface Property {
   boostExpiresAt?: string | null;
   expiresAt: string | null;
   createdAt: string;
+  views?: number;
+  leads?: number;
 }
 
 export default function MyAdsPage() {
@@ -216,6 +220,37 @@ export default function MyAdsPage() {
                   <div className="text-lg font-black text-[#171717] tracking-tight">
                     PKR {Number(item.rentPrice).toLocaleString()}
                     <span className="text-[11px] text-stone-400 font-bold ml-1">/ MO</span>
+                  </div>
+
+                  {/* REAL-TIME VIEWS & LEADS STATS BOX */}
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <div className="p-2.5 bg-[#FBFBF9] rounded-2xl border border-stone-200/80 flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                        <Eye className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-black text-[#171717] block leading-none">
+                          {item.views ?? 0}
+                        </span>
+                        <span className="text-[9px] font-bold uppercase text-stone-400">
+                          TOTAL VIEWS
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 bg-[#FBFBF9] rounded-2xl border border-stone-200/80 flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+                        <Users className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-black text-emerald-700 block leading-none">
+                          {item.leads ?? 0}
+                        </span>
+                        <span className="text-[9px] font-bold uppercase text-stone-400">
+                          ACTIVE LEADS
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Expiry / Lock Status Box */}

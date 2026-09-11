@@ -18,6 +18,8 @@ import {
   Calendar,
   Layers,
   Edit3,
+  Eye,
+  Users,
 } from "lucide-react";
 
 export default function AdminMyListingsPage() {
@@ -214,6 +216,19 @@ export default function AdminMyListingsPage() {
                       <div className="flex items-center gap-1 text-[#657A68]">
                         <Clock className="w-3 h-3" />
                         <span>{diffDays} DAYS REMAINING</span>
+                      </div>
+                    </div>
+
+                    {/* ADMIN REAL-TIME VIEWS & LEADS PILLS */}
+                    <div className="flex items-center gap-3 pt-1">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50/80 border border-blue-200/70 rounded-lg text-blue-700 text-[10px] font-black uppercase">
+                        <Eye className="w-3 h-3" />
+                        <span>{property.views ?? 0} VIEWS</span>
+                      </div>
+
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50/80 border border-emerald-200/70 rounded-lg text-emerald-800 text-[10px] font-black uppercase">
+                        <Users className="w-3 h-3" />
+                        <span>{property.leads ?? 0} LEADS</span>
                       </div>
                     </div>
                   </div>

@@ -511,3 +511,41 @@ export async function updateRentalAd(
     return { success: false, error: "FAILED TO UPDATE PROPERTY AD." };
   }
 }
+
+
+// 7. TRACK PROPERTY VIEW (Whenever someone visits the ad page)
+export async function trackPropertyView(propertyId: string) {
+  try {
+    if (!propertyId) return { success: false };
+    await prisma.property.update({
+      where: { id: propertyId },
+      data: {
+        views: {
+          increment: 1,
+        },
+      },
+    });
+    return { success: true };
+  } catch (error) {
+    // Analytics failure should never block user browsing
+    return { success: false };
+  }
+}
+
+// 8. TRACK PROPERTY LEAD (When visitor clicks Call or WhatsApp)
+export async function trackPropertyLead(propertyId: string) {
+  try {
+    if (!propertyId) return { success: false };
+    await prisma.property.update({
+      where: { id: propertyId },
+      data: {
+        leads: {
+          increment: 1,
+        },
+      },
+    });
+    return { success: true };
+  } catch (error) {
+    return { success: false };
+  }
+}

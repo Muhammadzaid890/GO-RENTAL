@@ -2,13 +2,12 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import PropertyGallery from "@/components/PropertyGallery";
+import PropertyContactButtons from "@/components/PropertyContactButtons";
 import {
   MapPin,
   Bed,
   Bath,
   Maximize2,
-  Phone,
-  MessageCircle,
   ArrowLeft,
   ShieldCheck,
   Building,
@@ -41,7 +40,11 @@ export default async function PropertyDetailPage({ params }: PropertyPageProps) 
   }
 
   const numericPrice = Number(property.rentPrice);
-  const whatsappNumber = property.user.phone.replace(/^0/, "92").replace(/\D/g, "");
+  const targetPhone = property.contactNumber || property.user.phone || "";
+  const whatsappNumber = (property.whatsappNumber || targetPhone)
+    .replace(/^0/, "92")
+    .replace(/\D/g, "");
+
   const whatsappMessage = encodeURIComponent(
     `Assalam o Alaikum, I am interested in your listing: "${property.title}" in ${property.phase} listed on GO RENTAL DHA.`
   );
@@ -60,7 +63,7 @@ export default async function PropertyDetailPage({ params }: PropertyPageProps) 
         </Link>
 
         <span className="text-xs font-black uppercase text-stone-400">
-          ID: {property.id.slice(-8)}
+          ID: {property.id.slice(-8).toUpperCase()}
         </span>
       </div>
 
@@ -182,26 +185,13 @@ export default async function PropertyDetailPage({ params }: PropertyPageProps) 
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="space-y-2.5 pt-2">
-              <a
-                href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>INQUIRE VIA WHATSAPP</span>
-              </a>
-
-              <a
-                href={`tel:${property.user.phone}`}
-                className="w-full py-3.5 bg-[#1A1F1C] hover:bg-stone-800 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all"
-              >
-                <Phone className="w-4 h-4 text-[#657A68]" />
-                <span>CALL AGENT ({property.user.phone})</span>
-              </a>
-            </div>
+            {/* Interactive Lead & View Tracking Contact Buttons */}
+            <PropertyContactButtons
+              propertyId={property.id}
+              phone={targetPhone}
+              whatsappNumber={whatsappNumber}
+              whatsappMessage={whatsappMessage}
+            />
 
             {/* Safety Notice */}
             <div className="p-3 bg-amber-50 rounded-xl border border-amber-200/60 text-[10px] font-bold uppercase text-amber-900 leading-relaxed">
