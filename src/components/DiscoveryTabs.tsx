@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Home, Building2, ChevronRight, ChevronLeft } from "lucide-react";
 
-// HOMES DATA (Page 1 & Page 2 matching exact screenshots)
+// HOMES DATA
 const homesData = {
   popular: {
     page1: [
@@ -89,14 +89,16 @@ const commercialData = {
 export default function DiscoveryTabs() {
   const router = useRouter();
 
-  // Tab selections
+  // Mobile Top Switcher: "HOMES" | "COMMERCIAL"
+  const [mobileCategory, setMobileCategory] = useState<"HOMES" | "COMMERCIAL">("HOMES");
+
+  // Inner Sub-tabs
   const [homesTab, setHomesTab] = useState<"popular" | "type" | "area">("popular");
   const [commTab, setCommTab] = useState<"popular" | "type" | "area">("popular");
 
   // Homes pagination page (1 or 2)
   const [homesPage, setHomesPage] = useState<1 | 2>(1);
 
-  // Tab switch handler (Resets page to 1)
   const handleHomesTabChange = (tab: "popular" | "type" | "area") => {
     setHomesTab(tab);
     setHomesPage(1);
@@ -117,176 +119,237 @@ export default function DiscoveryTabs() {
   const hasSecondPage = homesData[homesTab].page2.length > 0;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-      
-      {/* 1. HOMES CARD */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-200/90 shadow-sm space-y-5 flex flex-col justify-between">
-        <div className="space-y-4">
-          {/* Header */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#657A68]/15 text-[#657A68] flex items-center justify-center">
-              <Home className="w-5 h-5 fill-[#657A68]/20" />
+    <div className="space-y-4 pt-1">
+      {/* 
+        ============================================================
+        1. MOBILE TOP TOGGLE BAR (HOMES vs COMMERCIAL)
+        Visible only on mobile (hidden on desktop: flex md:hidden)
+        ============================================================
+      */}
+      <div className="flex md:hidden items-center p-1 bg-stone-100/90 rounded-2xl border border-stone-200/80 shadow-2xs">
+        <button
+          type="button"
+          onClick={() => setMobileCategory("HOMES")}
+          className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            mobileCategory === "HOMES"
+              ? "bg-[#657A68] text-white shadow-xs"
+              : "text-stone-600 hover:text-stone-900"
+          }`}
+        >
+          <Home className="w-4 h-4" />
+          <span>HOMES</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMobileCategory("COMMERCIAL")}
+          className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            mobileCategory === "COMMERCIAL"
+              ? "bg-[#657A68] text-white shadow-xs"
+              : "text-stone-600 hover:text-stone-900"
+          }`}
+        >
+          <Building2 className="w-4 h-4" />
+          <span>COMMERCIAL</span>
+        </button>
+      </div>
+
+      {/* 
+        ============================================================
+        2. TABS CARDS GRID:
+        - Mobile: Toggle between HOMES and COMMERCIAL based on state
+        - Desktop (md:): Both cards render side-by-side
+        ============================================================
+      */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* HOMES CARD */}
+        <div
+          className={`bg-white rounded-3xl p-5 sm:p-6 border border-stone-200/90 shadow-sm space-y-5 flex flex-col justify-between ${
+            mobileCategory === "HOMES" ? "flex" : "hidden md:flex"
+          }`}
+        >
+          <div className="space-y-4">
+            {/* Header */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#657A68]/15 text-[#657A68] flex items-center justify-center">
+                <Home className="w-5 h-5 fill-[#657A68]/20" />
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-black uppercase text-[#1A1F1C] tracking-tight">
+                  HOMES FOR RENT
+                </h3>
+                <p className="text-[10px] font-bold text-stone-400 uppercase hidden sm:block">
+                  POPULAR DHA HOUSES & FLATS
+                </p>
+              </div>
             </div>
-            <h3 className="text-lg font-black uppercase text-[#1A1F1C] tracking-tight">
-              HOMES
-            </h3>
-          </div>
 
-          {/* Sub Tabs */}
-          <div className="flex items-center gap-6 border-b border-stone-200/80 text-xs font-bold uppercase">
-            {(["popular", "type", "area"] as const).map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => handleHomesTabChange(tab)}
-                className={`pb-3 relative transition-all cursor-pointer font-black tracking-wider ${
-                  homesTab === tab
-                    ? "text-[#657A68]"
-                    : "text-stone-400 hover:text-stone-700"
-                }`}
-              >
-                {tab === "area" ? "Area Size" : tab === "popular" ? "Popular" : "Type"}
-                {homesTab === tab && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#657A68] rounded-full" />
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Tiles Grid with Left/Right Paginated Arrows */}
-          <div className="relative min-h-[175px]">
-            {/* Left Arrow (Visible only on Page 2) */}
-            {homesPage === 2 && (
-              <button
-                type="button"
-                onClick={() => setHomesPage(1)}
-                className="absolute -left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white border border-stone-200 shadow-md flex items-center justify-center text-[#657A68] hover:bg-stone-50 z-20 cursor-pointer transition-all"
-                title="Previous Page"
-              >
-                <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
-              </button>
-            )}
-
-            {/* Grid */}
-            <div className="grid grid-cols-3 gap-2.5">
-              {currentHomesItems.map((item, idx) => (
+            {/* Sub Tabs */}
+            <div className="flex items-center gap-6 border-b border-stone-200/80 text-xs font-bold uppercase">
+              {(["popular", "type", "area"] as const).map((tab) => (
                 <button
-                  key={idx}
+                  key={tab}
                   type="button"
-                  onClick={() => handleTileClick(item)}
-                  className="p-3 bg-white hover:bg-stone-50 border border-stone-200/90 hover:border-[#657A68] rounded-2xl flex flex-col items-center justify-center text-center shadow-2xs hover:shadow-xs transition-all cursor-pointer h-20 group"
+                  onClick={() => handleHomesTabChange(tab)}
+                  className={`pb-3 relative transition-all cursor-pointer font-black tracking-wider ${
+                    homesTab === tab
+                      ? "text-[#657A68]"
+                      : "text-stone-400 hover:text-stone-700"
+                  }`}
                 >
-                  <span className="text-xs font-black text-[#1A1F1C] group-hover:text-[#657A68] truncate w-full">
-                    {item.title}
-                  </span>
-                  {item.sub && (
-                    <span className="text-[10px] font-bold text-stone-400 uppercase mt-0.5">
-                      {item.sub}
-                    </span>
+                  {tab === "area" ? "Area Size" : tab === "popular" ? "Popular" : "Type"}
+                  {homesTab === tab && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#657A68] rounded-full" />
                   )}
                 </button>
               ))}
             </div>
 
-            {/* Right Arrow (Visible only if Page 1 has Next Page) */}
-            {hasSecondPage && homesPage === 1 && (
+            {/* Tiles Grid with Left/Right Paginated Arrows */}
+            <div className="relative min-h-[175px]">
+              {/* Left Arrow (Visible only on Page 2) */}
+              {homesPage === 2 && (
+                <button
+                  type="button"
+                  onClick={() => setHomesPage(1)}
+                  className="absolute -left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white border border-stone-200 shadow-md flex items-center justify-center text-[#657A68] hover:bg-stone-50 z-20 cursor-pointer transition-all"
+                  title="Previous Page"
+                >
+                  <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                </button>
+              )}
+
+              {/* Grid */}
+              <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+                {currentHomesItems.map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleTileClick(item)}
+                    className="p-2 sm:p-3 bg-white hover:bg-stone-50 border border-stone-200/90 hover:border-[#657A68] rounded-2xl flex flex-col items-center justify-center text-center shadow-2xs hover:shadow-xs transition-all cursor-pointer h-20 group"
+                  >
+                    <span className="text-xs font-black text-[#1A1F1C] group-hover:text-[#657A68] truncate w-full">
+                      {item.title}
+                    </span>
+                    {item.sub && (
+                      <span className="text-[10px] font-bold text-stone-400 uppercase mt-0.5">
+                        {item.sub}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Right Arrow (Visible only if Page 1 has Next Page) */}
+              {hasSecondPage && homesPage === 1 && (
+                <button
+                  type="button"
+                  onClick={() => setHomesPage(2)}
+                  className="absolute -right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white border border-stone-200 shadow-md flex items-center justify-center text-[#657A68] hover:bg-stone-50 z-20 cursor-pointer transition-all"
+                  title="Next Page"
+                >
+                  <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Pagination Dots Indicator */}
+          <div className="flex items-center justify-center gap-1.5 pt-2">
+            <button
+              type="button"
+              onClick={() => setHomesPage(1)}
+              className={`h-2 rounded-full transition-all cursor-pointer ${
+                homesPage === 1 ? "bg-[#657A68] w-4" : "bg-stone-300 w-2"
+              }`}
+            />
+            {hasSecondPage && (
               <button
                 type="button"
                 onClick={() => setHomesPage(2)}
-                className="absolute -right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white border border-stone-200 shadow-md flex items-center justify-center text-[#657A68] hover:bg-stone-50 z-20 cursor-pointer transition-all"
-                title="Next Page"
-              >
-                <ChevronRight className="w-5 h-5 stroke-[2.5]" />
-              </button>
+                className={`h-2 rounded-full transition-all cursor-pointer ${
+                  homesPage === 2 ? "bg-[#657A68] w-4" : "bg-stone-300 w-2"
+                }`}
+              />
             )}
           </div>
         </div>
 
-        {/* Pagination Dots Indicator */}
-        <div className="flex items-center justify-center gap-1.5 pt-2">
-          <button
-            type="button"
-            onClick={() => setHomesPage(1)}
-            className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
-              homesPage === 1 ? "bg-[#657A68] w-4" : "bg-stone-300"
-            }`}
-          />
-          {hasSecondPage && (
-            <button
-              type="button"
-              onClick={() => setHomesPage(2)}
-              className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
-                homesPage === 2 ? "bg-[#657A68] w-4" : "bg-stone-300"
-              }`}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* 2. COMMERCIAL CARD */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-200/90 shadow-sm space-y-5 flex flex-col justify-between">
-        <div className="space-y-4">
-          {/* Header */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#657A68]/15 text-[#657A68] flex items-center justify-center">
-              <Building2 className="w-5 h-5 fill-[#657A68]/20" />
+        {/* COMMERCIAL CARD */}
+        <div
+          className={`bg-white rounded-3xl p-5 sm:p-6 border border-stone-200/90 shadow-sm space-y-5 flex flex-col justify-between ${
+            mobileCategory === "COMMERCIAL" ? "flex" : "hidden md:flex"
+          }`}
+        >
+          <div className="space-y-4">
+            {/* Header */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#657A68]/15 text-[#657A68] flex items-center justify-center">
+                <Building2 className="w-5 h-5 fill-[#657A68]/20" />
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-black uppercase text-[#1A1F1C] tracking-tight">
+                  COMMERCIAL FOR RENT
+                </h3>
+                <p className="text-[10px] font-bold text-stone-400 uppercase hidden sm:block">
+                  OFFICES, SHOPS & BUILDINGS
+                </p>
+              </div>
             </div>
-            <h3 className="text-lg font-black uppercase text-[#1A1F1C] tracking-tight">
-              COMMERCIAL
-            </h3>
-          </div>
 
-          {/* Sub Tabs */}
-          <div className="flex items-center gap-6 border-b border-stone-200/80 text-xs font-bold uppercase">
-            {(["popular", "type", "area"] as const).map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setCommTab(tab)}
-                className={`pb-3 relative transition-all cursor-pointer font-black tracking-wider ${
-                  commTab === tab
-                    ? "text-[#657A68]"
-                    : "text-stone-400 hover:text-stone-700"
-                }`}
-              >
-                {tab === "area" ? "Area Size" : tab === "popular" ? "Popular" : "Type"}
-                {commTab === tab && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#657A68] rounded-full" />
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* 6 Tiles Grid */}
-          <div className="relative min-h-[175px]">
-            <div className="grid grid-cols-3 gap-2.5">
-              {commercialData[commTab].page1.map((item, idx) => (
+            {/* Sub Tabs */}
+            <div className="flex items-center gap-6 border-b border-stone-200/80 text-xs font-bold uppercase">
+              {(["popular", "type", "area"] as const).map((tab) => (
                 <button
-                  key={idx}
+                  key={tab}
                   type="button"
-                  onClick={() => handleTileClick(item)}
-                  className="p-3 bg-white hover:bg-stone-50 border border-stone-200/90 hover:border-[#657A68] rounded-2xl flex flex-col items-center justify-center text-center shadow-2xs hover:shadow-xs transition-all cursor-pointer h-20 group"
+                  onClick={() => setCommTab(tab)}
+                  className={`pb-3 relative transition-all cursor-pointer font-black tracking-wider ${
+                    commTab === tab
+                      ? "text-[#657A68]"
+                      : "text-stone-400 hover:text-stone-700"
+                  }`}
                 >
-                  <span className="text-xs font-black text-[#1A1F1C] group-hover:text-[#657A68] truncate w-full">
-                    {item.title}
-                  </span>
-                  {item.sub && (
-                    <span className="text-[10px] font-bold text-stone-400 uppercase mt-0.5">
-                      {item.sub}
-                    </span>
+                  {tab === "area" ? "Area Size" : tab === "popular" ? "Popular" : "Type"}
+                  {commTab === tab && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#657A68] rounded-full" />
                   )}
                 </button>
               ))}
             </div>
+
+            {/* 6 Tiles Grid */}
+            <div className="relative min-h-[175px]">
+              <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+                {commercialData[commTab].page1.map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleTileClick(item)}
+                    className="p-2 sm:p-3 bg-white hover:bg-stone-50 border border-stone-200/90 hover:border-[#657A68] rounded-2xl flex flex-col items-center justify-center text-center shadow-2xs hover:shadow-xs transition-all cursor-pointer h-20 group"
+                  >
+                    <span className="text-xs font-black text-[#1A1F1C] group-hover:text-[#657A68] truncate w-full">
+                      {item.title}
+                    </span>
+                    {item.sub && (
+                      <span className="text-[10px] font-bold text-stone-400 uppercase mt-0.5">
+                        {item.sub}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Commercial Dot */}
+          <div className="flex items-center justify-center gap-1.5 pt-2">
+            <span className="w-4 h-2 rounded-full bg-[#657A68]" />
           </div>
         </div>
 
-        {/* Commercial Dot */}
-        <div className="flex items-center justify-center gap-1.5 pt-2">
-          <span className="w-4 h-2 rounded-full bg-[#657A68]" />
-        </div>
       </div>
-
     </div>
   );
 }

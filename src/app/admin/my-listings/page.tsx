@@ -84,11 +84,11 @@ export default function AdminMyListingsPage() {
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-12 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* 1. Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-5">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl sm:text-2xl font-black uppercase text-[#1A1F1C] tracking-tight">
               MY POSTED LISTINGS
             </h1>
@@ -96,7 +96,7 @@ export default function AdminMyListingsPage() {
               {listings.length} PROPERTIES
             </span>
           </div>
-          <p className="text-xs font-bold uppercase text-stone-400">
+          <p className="text-xs font-bold uppercase text-stone-400 mt-0.5">
             MANAGE YOUR DIRECTLY POSTED PROPERTIES & TRACK STATUS
           </p>
         </div>
@@ -104,7 +104,7 @@ export default function AdminMyListingsPage() {
         <Link
           href="/post-ad"
           style={{ backgroundColor: "#1A1F1C", color: "#ffffff" }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-stone-800 transition-all shadow-xs cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-stone-800 transition-all shadow-xs cursor-pointer w-full sm:w-auto"
         >
           <Plus className="w-4 h-4 text-[#657A68] stroke-[3]" />
           <span>POST NEW PROPERTY</span>
@@ -128,11 +128,11 @@ export default function AdminMyListingsPage() {
 
       {/* 3. Listings View */}
       {loading ? (
-        <div className="p-16 text-center text-xs font-black uppercase text-stone-400">
+        <div className="p-16 text-center text-xs font-black uppercase text-stone-400 tracking-wider">
           LOADING YOUR LISTINGS...
         </div>
       ) : listings.length === 0 ? (
-        <div className="p-16 text-center bg-white rounded-3xl border border-stone-200 shadow-xs space-y-4">
+        <div className="p-12 sm:p-16 text-center bg-white rounded-3xl border border-stone-200 shadow-xs space-y-4">
           <div className="w-12 h-12 rounded-2xl bg-[#657A68]/15 text-[#657A68] flex items-center justify-center mx-auto">
             <Building2 className="w-6 h-6" />
           </div>
@@ -147,13 +147,13 @@ export default function AdminMyListingsPage() {
           <Link
             href="/post-ad"
             style={{ backgroundColor: "#1A1F1C", color: "#ffffff" }}
-            className="inline-block px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider"
+            className="inline-block px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider shadow-md"
           >
             CREATE FIRST LISTING
           </Link>
         </div>
       ) : (
-        <div className="space-y-3.5">
+        <div className="space-y-4">
           {listings.map((property) => {
             const isItemLoading = actionLoadingId === property.id;
             const images = property.images && property.images.length > 0 ? property.images : ["/placeholder.jpg"];
@@ -166,31 +166,35 @@ export default function AdminMyListingsPage() {
             return (
               <div
                 key={property.id}
-                className={`bg-white rounded-3xl border p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xs transition-all ${
+                className={`bg-white rounded-3xl border p-4 sm:p-5 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 shadow-xs transition-all ${
                   property.isPremium
-                    ? "border-red-300 bg-red-50/15"
-                    : "border-stone-200/90"
+                    ? "border-red-300 bg-red-50/10"
+                    : "border-stone-200/90 hover:border-stone-300"
                 }`}
               >
-                {/* Left: Thumbnail & Core Details */}
-                <div className="flex items-start sm:items-center gap-4 min-w-0 flex-1">
-                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-stone-100 shrink-0 border border-stone-200">
+                {/* Left Area: Thumbnail + Info */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3.5 sm:gap-4 min-w-0 flex-1">
+                  {/* Thumbnail Image */}
+                  <div className="relative w-full sm:w-24 sm:h-24 h-48 rounded-2xl overflow-hidden bg-stone-100 shrink-0 border border-stone-200">
                     <Image
                       src={images[0]}
                       alt={property.title}
                       fill
-                      sizes="96px"
+                      sizes="(max-width: 640px) 100vw, 96px"
                       className="object-cover"
                     />
                     {property.isPremium && (
-                      <div className="absolute top-1 left-1 bg-[#E53935] text-white p-1 rounded-md shadow-md">
+                      <div className="absolute top-2 left-2 bg-[#E53935] text-white p-1 rounded-md shadow-md flex items-center gap-1 text-[10px] font-black uppercase px-2">
                         <Flame className="w-3 h-3" />
+                        <span>PREMIUM</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="space-y-1.5 min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
+                  {/* Content Details */}
+                  <div className="space-y-1.5 min-w-0 flex-1 w-full">
+                    {/* Top Badges */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-[10px] font-mono font-bold text-stone-500 uppercase bg-stone-100 px-2 py-0.5 rounded-md border border-stone-200">
                         #{property.id.slice(-6).toUpperCase()}
                       </span>
@@ -202,11 +206,13 @@ export default function AdminMyListingsPage() {
                       </span>
                     </div>
 
-                    <h3 className="text-sm sm:text-base font-black uppercase text-[#1A1F1C] truncate">
+                    {/* Listing Title */}
+                    <h3 className="text-sm sm:text-base font-black uppercase text-[#1A1F1C] truncate block">
                       {property.title}
                     </h3>
 
-                    <div className="flex items-center gap-3 text-xs font-bold uppercase text-stone-500 flex-wrap">
+                    {/* Price, Area & Duration */}
+                    <div className="flex items-center gap-2 sm:gap-3 text-xs font-bold uppercase text-stone-500 flex-wrap">
                       <span className="text-stone-900 font-black">
                         PKR {Number(property.rentPrice).toLocaleString()} / MO
                       </span>
@@ -215,18 +221,18 @@ export default function AdminMyListingsPage() {
                       <span>•</span>
                       <div className="flex items-center gap-1 text-[#657A68]">
                         <Clock className="w-3 h-3" />
-                        <span>{diffDays} DAYS REMAINING</span>
+                        <span>{diffDays} DAYS LEFT</span>
                       </div>
                     </div>
 
-                    {/* ADMIN REAL-TIME VIEWS & LEADS PILLS */}
-                    <div className="flex items-center gap-3 pt-1">
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50/80 border border-blue-200/70 rounded-lg text-blue-700 text-[10px] font-black uppercase">
+                    {/* Real-time Views & Leads Tracking Pills */}
+                    <div className="flex items-center gap-2 pt-1 flex-wrap">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200/70 rounded-lg text-blue-700 text-[10px] font-black uppercase">
                         <Eye className="w-3 h-3" />
                         <span>{property.views ?? 0} VIEWS</span>
                       </div>
 
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50/80 border border-emerald-200/70 rounded-lg text-emerald-800 text-[10px] font-black uppercase">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200/70 rounded-lg text-emerald-800 text-[10px] font-black uppercase">
                         <Users className="w-3 h-3" />
                         <span>{property.leads ?? 0} LEADS</span>
                       </div>
@@ -234,52 +240,54 @@ export default function AdminMyListingsPage() {
                   </div>
                 </div>
 
-                {/* Right: Quick Controls */}
-                <div className="flex items-center gap-2 self-end md:self-center shrink-0 flex-wrap">
-                  {/* Public Link */}
+                {/* Right Area: Action Controls (Optimized for Mobile Grid) */}
+                <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 pt-3 border-t border-stone-100 lg:pt-0 lg:border-t-0 shrink-0 w-full lg:w-auto">
+                  {/* Public View Link */}
                   <Link
                     href={`/property/${property.id}`}
                     target="_blank"
-                    className="p-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 transition-colors"
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-black uppercase tracking-wider transition-colors shadow-2xs cursor-pointer col-span-1"
                     title="View Public Listing"
                   >
-                    <ExternalLink className="w-4 h-4" />
+                    <ExternalLink className="w-3.5 h-3.5 text-[#657A68]" />
+                    <span>VIEW</span>
                   </Link>
 
-                  {/* EDIT BUTTON */}
+                  {/* Edit Button */}
                   <button
                     type="button"
                     onClick={() => setEditingProperty(property)}
-                    className="flex items-center gap-1 px-3.5 py-2.5 rounded-xl bg-stone-100 hover:bg-[#1A1F1C] text-stone-700 hover:text-white border border-stone-200 hover:border-[#1A1F1C] text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-2xs"
+                    className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-stone-100 hover:bg-[#1A1F1C] text-stone-700 hover:text-white border border-stone-200 hover:border-[#1A1F1C] text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-2xs col-span-1"
                   >
                     <Edit3 className="w-3.5 h-3.5 text-[#657A68]" />
                     <span>EDIT</span>
                   </button>
 
-                  {/* Toggle Premium */}
+                  {/* Toggle Premium Button */}
                   <button
                     type="button"
                     disabled={isItemLoading}
                     onClick={() => handleTogglePremium(property.id)}
-                    className={`px-3.5 py-2.5 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 transition-all cursor-pointer border ${
+                    className={`col-span-1 sm:col-auto px-3 py-2 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer border ${
                       property.isPremium
                         ? "bg-[#E53935] text-white border-[#E53935] shadow-xs"
                         : "bg-white hover:bg-red-50 text-[#E53935] border-red-200"
                     } disabled:opacity-50`}
                   >
-                    <Flame className="w-4 h-4" />
-                    <span>{property.isPremium ? "PREMIUM ACTIVE" : "MAKE PREMIUM"}</span>
+                    <Flame className="w-3.5 h-3.5" />
+                    <span>{property.isPremium ? "PREMIUM" : "BOOST"}</span>
                   </button>
 
-                  {/* Delete */}
+                  {/* Delete Button */}
                   <button
                     type="button"
                     disabled={isItemLoading}
                     onClick={() => handleDelete(property.id, property.title)}
-                    className="p-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors cursor-pointer disabled:opacity-50"
+                    className="col-span-1 sm:col-auto flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
                     title="Delete Listing"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>DELETE</span>
                   </button>
                 </div>
               </div>
@@ -288,7 +296,7 @@ export default function AdminMyListingsPage() {
         </div>
       )}
 
-      {/* EDIT MODAL INTEGRATION */}
+      {/* Edit Modal Integration */}
       {editingProperty && (
         <EditAdModal
           property={{
